@@ -1,6 +1,6 @@
 Calx is an idiomatic wrapper for OpenCL, which is an abstraction layer for concurrent computation.  Using a C-variant language, a programmer can target CPUs, GPUs, and more exotic hardware (the Cell processor used in the PS3, for instance).
 
-The OpenCL API is not known for its terseness; consider this "\"Hello World\"":http://developer.apple.com/mac/library/samplecode/OpenCL_Hello_World_Example/Listings/hello_c.html#//apple_ref/doc/uid/DTS40008187-hello_c-DontLinkElementID_4 example demonstrating the necessary steps to square a list of floating point numbers.  Using Calx, the same result can be achieved like so:
+The OpenCL API is not known for its terseness; consider this "'Hello World' example":http://developer.apple.com/mac/library/samplecode/OpenCL_Hello_World_Example/Listings/hello_c.html#//apple_ref/doc/uid/DTS40008187-hello_c-DontLinkElementID_4 example demonstrating the necessary steps to square a list of floating point numbers.  Using Calx, the same result can be achieved like so:
 
 <pre><code>
 (use '[calx core data])	
