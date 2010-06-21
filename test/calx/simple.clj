@@ -24,7 +24,7 @@
 		(with-program (compile-program source)
 		  (let [a (wrap [1 2 3] :float)
 			b (wrap [1 2 3] :float)
-			c (create-buffer 3 :float)]
+			c (mimic a)]
 		    (enqueue-kernel :vec-add 3 a b c)
 		    (enqueue-read c))))]
     (is (= [2 4 6] (seq @value)))))
