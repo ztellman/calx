@@ -6,9 +6,10 @@ The OpenCL API is not known for its terseness; consider this "'Hello World' exam
 	
 (def source
   "__kernel void square (
-       __global float *a) {
+       __global const float *a
+       __global float *b) {
     int gid = get_global_id(0);
-    a[gid] = a[gid] * a[gid];
+    b[gid] = a[gid] * a[gid];
   }")
 
 (with-cl
