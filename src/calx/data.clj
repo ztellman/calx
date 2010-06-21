@@ -1,120 +1,166 @@
+;;   Copyright (c) Zachary Tellman. All rights reserved.
+;;   The use and distribution terms for this software are covered by the
+;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
+;;   which can be found in the file epl-v10.html at the root of this distribution.
+;;   By using this software in any fashion, you are agreeing to be bound by
+;;   the terms of this license.
+;;   You must not remove this notice, or any other, from this software.
+
 (ns calx.data
   (:use [clojure.contrib.def :only (defmacro- defvar- defvar)]
 	[calx.core]
 	[cantor])
-  (:import [com.nativelibs4java.opencl CLContext CLBuffer CLMem CLMem$Usage CLEvent]
+  (:import [com.nativelibs4java.opencl CLContext CLByteBuffer CLMem CLMem$Usage CLEvent]
 	   [com.nativelibs4java.util NIOUtils]
-	   [java.nio ByteOrder Buffer]))
+	   [java.nio ByteOrder ByteBuffer]))
 
 ;;;
 
 (defvar- usage-types
-  {:input CLMem$Usage/Input
-   :output CLMem$Usage/Output
-   :input-output CLMem$Usage/InputOutput})
+  {:in CLMem$Usage/Input
+   :out CLMem$Usage/Output
+   :in-out CLMem$Usage/InputOutput})
 
-(defn- buffer-type [typ]
-  (symbol (str "java.nio." typ "Buffer")))
+(defvar- put-fns
+  {:float #(.putFloat ^ByteBuffer %1 %2)
+   :double #(.putDouble ^ByteBuffer %1 %2)
+   :int #(.putInt ^ByteBuffer %1 %2)
+   :long #(.putLong ^ByteBuffer %1 %2)
+   :short #(.putShort ^ByteBuffer %1 %2)
+   :byte #(.put ^ByteBuffer %1 (byte %2))})
 
-(defmacro- direct-buffer-fn [typ]
-  `(fn [dim#]
-     (. NIOUtils ~(symbol (str "direct" typ "s")) dim# (ByteOrder/nativeOrder))))
+(defvar- get-fns
+  {:float #(.getFloat ^ByteBuffer %)
+   :double #(.getDouble ^ByteBuffer %)
+   :int #(.getInt ^ByteBuffer %)
+   :long #(.getLong ^ByteBuffer %)
+   :short #(.getShort ^ByteBuffer %)
+   :byte #(.get ^ByteBuffer %)})
 
-(defmacro- populate-buffer-fn [typ]
-  `(fn [buf# seq#]
-     (doseq [s# seq#]
-       (.put ^{:tag ~(buffer-type typ)} buf# s#))
-     (.rewind buf#)))
+(defn sizeof [sig]
+  (let [sig (if (sequential? sig) sig [sig])]
+    (reduce +
+      (map
+	{:float 4
+	 :double 8
+	 :int 4
+	 :long 8
+	 :short 2
+	 :byte 1}
+	sig))))
 
-(defmacro- create-cl-buffer-fn [typ]
-  (let [fn-name (symbol (str "create" typ "Buffer"))] 
-    `(fn [buf# usage#]
-       (. (context) ~fn-name (usage-types usage#) buf# false))))
+(defn to-buffer [s sig]
+  (let [sig (if (sequential? sig) sig [sig])
+	dim (* (/ (count s) (count sig)) (sizeof sig))
+	buf (NIOUtils/directBytes dim (ByteOrder/nativeOrder))]
+    (doseq [[typ val] (map list (cycle sig) s)]
+      ((put-fns typ) buf val))
+    (.rewind ^ByteBuffer buf)
+    buf))
 
-(defmacro- wrap-seq-fn [typ]
-  `(fn [s# usage#]
-     (let [buf# ((direct-buffer-fn ~typ) (count s#))]
-       ((populate-buffer-fn ~typ) buf# s#)
-       ((create-cl-buffer-fn ~typ) buf# usage#))))
+(defn- element-from-buffer [^ByteBuffer buf sig idx]
+  (.position buf (* (sizeof sig) idx))
+  (let [element (vec (map #((get-fns %1) buf) sig))]
+    (.rewind buf)
+    (if (= 1 (count sig))
+      (first element)
+      element)))
 
-(defmacro- empty-buffer-fn [typ]
-  `(fn [dim# usage#]
-     (let [buf# ((direct-buffer-fn ~typ) dim#)]
-       ((create-cl-buffer-fn ~typ) buf# usage#))))
-
-(defmacro- buffer-nth-fn [typ]
-  (fn [buf# idx#]
-    (.get ^{:tag ~(buffer-type typ)} buf# idx#)))
-
-(defvar type-map
-  (->>
-   {[:int Integer Integer/TYPE] 'Int
-    [:short Short Short/TYPE] 'Short
-    [:byte Byte Byte/TYPE] 'Byte
-    [:long Long Long/TYPE] 'Long
-    [:float Float Float/TYPE] 'Float
-    [:double Double Double/TYPE] 'Double}
-   (map (fn [[k v]] (interleave k (repeat v))))
-   (apply concat)
-   (apply hash-map)))
-
-(defmacro apply-type-fn [type-macro]
-  (into {} (map (fn [[k v]] [k (macroexpand (list type-macro v))]) type-map)))
-
-(defvar wrap-fns (apply-type-fn wrap-seq-fn))
-(defvar create-fns (apply-type-fn empty-buffer-fn))
-(defvar buffer-fns (apply-type-fn direct-buffer-fn))
-(defvar nth-fns (apply-type-fn buffer-nth-fn))
+(defn from-buffer [^ByteBuffer buf sig]
+  (let [sig (if (sequential? sig) sig [sig])
+	cnt (/ (.capacity buf) (sizeof sig))]
+    ^{:type ::from-buffer}
+    (reify
+      clojure.lang.Indexed
+      (nth [_ i] (element-from-buffer buf sig i))
+      (count [_] cnt)
+      clojure.lang.Seqable
+      (seq [this] (map #(nth this %) (range cnt))))))
 
 ;;;
 
 (defprotocol Data
-  (mimic [d] [d dim])
-  (enqueue-read [d] [d range])
-  (release [d]))
+  (mimic [d] [d dim]
+    "Create a different buffer of the same type. 'dim' defaults to the buffer's dimensions.")
+  (enqueue-read [d] [d range]
+    "Asynchronously copies a subset of the buffer into local memory. 'range' defaults to the full buffer.
+     Returns an object that, when dereferenced, halts execution until the copy is complete, then returns a seq.")
+  (dim [d]
+    "Returns the dimensions of the buffer.")
+  (signature [d]
+    "Returns the per-element signature of the buffer.")
+  (release [d]
+    "Releases the buffer."))
 
-(defn- create- [buf typ dim usage]
-  (reify
-   Data
-   (mimic [this] (mimic this dim))
-   (mimic [_ dim] ((create-fns typ) dim))
-   (enqueue-read [this] (enqueue-read this (interval 0 dim)))
-   (enqueue-read
-    [this rng]
-    (let [dim (size rng)
-	  read-buf ((buffer-fns typ) dim)
-	  event (. buf read
-		   (queue)
-		   (ul rng) (size rng)
-		   read-buf false
-		   (make-array CLEvent 0))
-	  nth-fn (nth-fns typ)]
-      (reify
-       HasEvent
-       (event [_] event)
-       clojure.lang.IDeref
-       (deref [_]
-         (wait-for event)
-	 (reify
-	  clojure.lang.Indexed
-	  (nth [_ i] (nth-fn read-buf i))
-	  (count [_] dim)
-	  clojure.lang.Seqable
-	  (seq [this] (map #(nth this %) (range (count this)))))))))
-   (release [_] (.release buf))))
-
-(defn create
-  ([typ dim]
-     (create typ dim :input-output))
-  ([typ dim usage]
-     (let [buf #^CLBuffer ((create-fns typ) dim)]
-       (create- buf typ dim usage))))
+(defn- create-buffer- [^CLByteBuffer cl-buf sig dim usage]
+  (let [element-bytes (sizeof sig)]
+    ^{:cl-object cl-buf}
+    (reify
+      Data
+      (mimic [this] (mimic this dim))
+      (mimic [_ dim] (.createByteBuffer (context) (usage-types usage) (* dim element-bytes) false))
+      (signature [_] sig)
+      (dim [_] dim)
+      (enqueue-read [this] (enqueue-read this (interval 0 dim)))
+      (enqueue-read [this rng]
+	(let [dim (size rng)
+	      buf (NIOUtils/directBytes (* dim element-bytes) (ByteOrder/nativeOrder))
+	      event (. cl-buf read
+		      (queue)
+		      (* element-bytes (ul rng))
+		      (* element-bytes (size rng))
+		      buf
+		      false
+		      (make-array CLEvent 0))]
+	  ^{:type ::enqueued-read}
+	  (reify
+	    HasEvent
+	    (event [_] event)
+	    (description [_] :enqueued-read)
+	    clojure.lang.IDeref
+	    (deref [_]
+	      (wait-for event)
+	      (from-buffer buf sig)))))
+      (release [_] (.release cl-buf)))))
 
 (defn wrap
-  ([s]
-     (wrap s :input-output))
-  ([s usage]
-     (let [typ (->> s first type)
-	   buf #^CLBuffer ((wrap-fns typ) s usage)]
-       (create- buf typ (count s) usage))))
+  "Copies a sequence into an OpenCL buffer.  Type is assumed to be uniform across the sequence.
 
+   'usage' may be one of [:in :out :in-out].  The default value is :in-out."
+  ([s]
+     (wrap s 1))
+  ([s sig]
+     (wrap s sig :in-out))
+  ([s sig usage]
+     (let [sig-count (if (sequential? sig) (count sig) 1)
+	   num-bytes (* (sizeof sig) (/ (count s) sig-count))]
+       (when-not (zero? (rem (count s) sig-count))
+	 (throw (Exception. (format "Sequence count (%d) not evenly divisable by signature count (%d)." (count s) sig-count))))
+       (create-buffer-
+	 (.createByteBuffer (context) (usage-types usage) (to-buffer s sig) false)
+	 sig
+	 (/ (count s) sig-count)
+	 usage))))
+
+(defn create-buffer
+  ([dim sig]
+     (create-buffer dim sig :in-out))
+  ([dim sig usage]
+     (create-buffer-
+       (.createByteBuffer (context) (usage-types usage) (* dim (sizeof sig)))
+       sig
+       dim
+       usage)))
+
+;;;
+
+(defmethod print-method ::enqueued-read [b writer]
+  (let [sts (status (event b))]
+    (.write writer "#<Ref to native buffer: ")
+    (if (= :complete sts)
+      (print-method (seq @b) writer)
+      (.write writer sts))
+    (.write writer ">")))
+
+(defmethod print-method ::from-buffer [b writer]
+  (print-method (seq b) writer))
