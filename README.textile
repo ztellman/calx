@@ -6,7 +6,7 @@ The OpenCL API is not known for its terseness; consider this "'Hello World' exam
 	
 (def source
   "__kernel void square (
-       __global const float *a
+       __global const float *a,
        __global float *b) {
     int gid = get_global_id(0);
     b[gid] = a[gid] * a[gid];
@@ -15,7 +15,7 @@ The OpenCL API is not known for its terseness; consider this "'Hello World' exam
 (with-cl
   (with-program (compile-program source)
     (let [a (wrap [1 2 3] :float)
-          b (create-buffer 3 :float)]
+          b (mimic a)]
       (enqueue-kernel :square 3 a b)
       (enqueue-read b))))
 </code></pre>

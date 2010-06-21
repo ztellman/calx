@@ -282,8 +282,9 @@
     (sequential? x) (into-array x)))
 
 (defn enqueue-kernel
-  ([kernel global-size block-size & args]
+  ([kernel global-size & args]
      (let [kernel ^CLKernel ((program) kernel)]
        (doseq [[idx arg] (indexed (map get-cl-object args))]
+	 (println idx arg)
 	 (.setArg kernel idx arg))
        (.enqueueNDRange kernel (queue) (to-dim-array global-size) *workgroup-size* (make-array CLEvent 0)))))

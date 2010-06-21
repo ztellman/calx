@@ -80,8 +80,8 @@
 ;;;
 
 (defprotocol Data
-  (mimic [d] [d dim]
-    "Create a different buffer of the same type. 'dim' defaults to the buffer's dimensions.")
+  (mimic [d] [d dim usage]
+    "Create a different buffer of the same type. 'dim' and 'usage' default to those of the original buffer.")
   (enqueue-read [d] [d range]
     "Asynchronously copies a subset of the buffer into local memory. 'range' defaults to the full buffer.
      Returns an object that, when dereferenced, halts execution until the copy is complete, then returns a seq.")
@@ -97,8 +97,13 @@
     ^{:cl-object cl-buf}
     (reify
       Data
-      (mimic [this] (mimic this dim))
-      (mimic [_ dim] (.createByteBuffer (context) (usage-types usage) (* dim element-bytes) false))
+      (mimic [this] (mimic this dim usage))
+      (mimic [_ dim usage]
+	(create-buffer-
+	  (.createByteBuffer (context) (usage-types usage) (* dim element-bytes))
+	  sig
+	  dim
+	  usage))
       (signature [_] sig)
       (dim [_] dim)
       (enqueue-read [this] (enqueue-read this (interval 0 dim)))
