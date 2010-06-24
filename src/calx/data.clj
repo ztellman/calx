@@ -157,7 +157,8 @@
 	  (from-buffer buf signature))))))
 
 (defn- create-buffer- [^CLByteBuffer buffer dim sig usage]
-  (Buffer. buffer (* dim (sizeof sig)) dim sig usage (ref 1)))
+  (let [buf (Buffer. buffer (* dim (sizeof sig)) dim sig usage (ref 1))]
+    (with-meta buf (merge (meta buf) {:cl-object buffer}))))
 
 (defn wrap
   "Copies a sequence into an OpenCL buffer.  Type is assumed to be uniform across the sequence.
