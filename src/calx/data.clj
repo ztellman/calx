@@ -53,7 +53,9 @@
        :byte 1}
       (transform-sig sig))))
 
-(defn to-buffer [s sig]
+(defn to-buffer
+  "Fills a ByteBuffer with a contiguous mixed datatype defined by 'sig'."
+  [s sig]
   (let [sig (transform-sig sig)
 	dim (* (/ (count s) (count sig)) (sizeof sig))
 	buf (NIOUtils/directBytes dim (ByteOrder/nativeOrder))]
@@ -73,7 +75,9 @@
 	(zipmap (keys sig) element)
 	element))))
 
-(defn from-buffer [^ByteBuffer buf sig]
+(defn from-buffer
+  "Pulls out mixed datatypes from a ByteBuffer, per 'sig'."
+  [^ByteBuffer buf sig]
   (let [cnt (/ (.capacity buf) (sizeof sig))]
     ^{:type ::from-buffer}
     (reify
@@ -86,53 +90,74 @@
 ;;;
 
 (defprotocol Data
-  (mimic [d] [d dim usage]
+  (mimic [d] [d dim] [d dim usage]
     "Create a different buffer of the same type. 'dim' and 'usage' default to those of the original buffer.")
   (enqueue-read [d] [d range]
     "Asynchronously copies a subset of the buffer into local memory. 'range' defaults to the full buffer.
      Returns an object that, when dereferenced, halts execution until the copy is complete, then returns a seq.")
-  (dim [d]
-    "Returns the dimensions of the buffer.")
-  (signature [d]
-    "Returns the per-element signature of the buffer.")
-  (release [d]
+  (suitability [a size]
+    "Returns the suitability for containing a data set of the specified size.")
+  (released? [d]
+    "Returns true if ref-count is equal to zero.")
+  (acquire! [d]
+    "Acquires the buffer.")
+  (release! [d]
     "Releases the buffer."))
 
-(defn- create-buffer- [^CLByteBuffer cl-buf sig dim usage]
-  (let [element-bytes (sizeof sig)]
-    ^{:cl-object cl-buf}
-    (reify
-      Data
-      (mimic [this] (mimic this dim usage))
-      (mimic [_ dim usage]
-	(create-buffer-
-	  (.createByteBuffer (context) (usage-types usage) (* dim element-bytes))
-	  sig
-	  dim
-	  usage))
-      (signature [_] sig)
-      (dim [_] dim)
-      (enqueue-read [this] (enqueue-read this (interval 0 dim)))
-      (enqueue-read [this rng]
-	(let [dim (size rng)
-	      buf (NIOUtils/directBytes (* dim element-bytes) (ByteOrder/nativeOrder))
-	      event (. cl-buf read
-		      (queue)
-		      (* element-bytes (ul rng))
-		      (* element-bytes (size rng))
-		      buf
-		      false
-		      (make-array CLEvent 0))]
-	  ^{:type ::enqueued-read}
-	  (reify
-	    HasEvent
-	    (event [_] event)
-	    (description [_] :enqueued-read)
-	    clojure.lang.IDeref
-	    (deref [_]
-	      (wait-for event)
-	      (from-buffer buf sig)))))
-      (release [_] (.release cl-buf)))))
+(declare create-buffer-)
+
+(defn create-buffer
+  "Creates an OpenCL buffer.
+
+   'usage' may be one of [:in :out :in-out].  The default value is :in-out."
+  ([dim sig]
+     (create-buffer dim sig :in-out))
+  ([dim sig usage]
+     (when-let [match (dosync (let []))])
+     (create-buffer-
+       (.createByteBuffer (context) (usage-types usage) (* dim (sizeof sig)))
+       dim
+       sig
+       usage)))
+
+(defrecord Buffer [^CLByteBuffer buffer, ^int capacity, ^int dimensions, signature, usage, ref-count]
+  Data
+  ;;
+  (mimic [this] (mimic this dimensions))
+  (mimic [this dim] (mimic this dim usage))
+  (mimic [_ dim usage] (create-buffer dim signature usage))
+  ;;
+  (acquire! [_] (dosync (alter ref-count inc)))
+  (release! [_] (dosync (alter ref-count dec)))
+  (released? [_] (zero? @ref-count))
+  ;;
+  (suitability [this size]
+    (when (and (<= size capacity) (> size (/ capacity 2)))
+      (/ (float size) capacity)))
+  ;;
+  (enqueue-read [this] (enqueue-read this (interval 0 dimensions)))
+  (enqueue-read [this rng]
+    (let [dim (size rng)
+	  buf (NIOUtils/directBytes (* dim (sizeof signature)) (ByteOrder/nativeOrder))
+	  event (. buffer read
+		  (queue)
+		  (* dim (sizeof signature) (ul rng))
+		  (* (sizeof signature) (size rng))
+		  buf
+		  false
+		  (make-array CLEvent 0))]
+      ^{:type ::enqueued-read}
+      (reify
+	HasEvent
+	(event [_] event)
+	(description [_] :enqueued-read)
+	clojure.lang.IDeref
+	(deref [_]
+	  (wait-for event)
+	  (from-buffer buf signature))))))
+
+(defn- create-buffer- [^CLByteBuffer buffer dim sig usage]
+  (Buffer. buffer (* dim (sizeof sig)) dim sig usage (ref 1)))
 
 (defn wrap
   "Copies a sequence into an OpenCL buffer.  Type is assumed to be uniform across the sequence.
@@ -149,22 +174,13 @@
 	 (throw (Exception. (format "Sequence count (%d) not evenly divisable by signature count (%d)." (count s) sig-count))))
        (create-buffer-
 	 (.createByteBuffer (context) (usage-types usage) (to-buffer s sig) false)
-	 sig
 	 (/ (count s) sig-count)
+	 sig
 	 usage))))
 
-(defn create-buffer
-  "Creates an OpenCL buffer.
+;;;
 
-   'usage' may be one of [:in :out :in-out].  The default value is :in-out."
-  ([dim sig]
-     (create-buffer dim sig :in-out))
-  ([dim sig usage]
-     (create-buffer-
-       (.createByteBuffer (context) (usage-types usage) (* dim (sizeof sig)))
-       sig
-       dim
-       usage)))
+
 
 ;;;
 

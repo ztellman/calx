@@ -8,11 +8,14 @@
 
 (ns calx
   (:use
-    [clojure.contrib.def :only (defmacro-)])
+    [clojure.contrib.def :only (defmacro- defvar-)])
   (:require
     [calx
      [core :as core]
-     [data :as data]]))
+     [data :as data]])
+  (:import
+    [com.nativelibs4java.opencl
+     CLEvent CLQueue CLEvent$CommandType CLContext]))
 
 ;;;
 
@@ -53,7 +56,8 @@
 (import-fn data/from-buffer)
 (import-fn data/wrap)
 (import-fn #'data/mimic)
-(import-fn #'data/release)
+(import-fn #'data/release!)
+(import-fn #'data/acquire!)
 (import-fn #'data/enqueue-read)
 (import-fn data/create-buffer)
 
@@ -127,3 +131,31 @@
 
 ;;;
 
+(defvar- event-type-map
+  {CLEvent$CommandType/CopyBuffer :copy-buffer
+   CLEvent$CommandType/CopyBufferToImage :copy-buffer-to-image
+   CLEvent$CommandType/CopyImageToBuffer :copy-image-to-buffer
+   CLEvent$CommandType/ReadBuffer :read-buffer
+   CLEvent$CommandType/WriteBuffer :write-buffer
+   CLEvent$CommandType/ReadImage :copy-image
+   CLEvent$CommandType/WriteImage :write-image
+   CLEvent$CommandType/NDRangeKernel :execute-kernel})
+
+(extend-type CLEvent
+  core/HasEvent
+  (event [e]
+    e)
+  (description [e]
+    (or
+      (event-type-map (.getCommandType e))
+      :other)))
+
+(extend-type CLQueue
+  core/HasEvent
+  (event [q]
+    (with-queue q
+      (enqueue-marker)))
+  (description [q]
+    :queue))
+
+;;;

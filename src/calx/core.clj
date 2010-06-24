@@ -31,6 +31,7 @@
 (defvar *context* nil "The current context.")
 (defvar *queue* nil "The current queue.")
 (defvar *program* nil "The current program")
+(defvar *cache* nil "The current buffer cache")
 (defvar *workgroup-size* nil "The size of the workgroup")
 
 (defn platform
@@ -159,33 +160,6 @@
     CLEvent$CommandExecutionStatus/Running :running
     CLEvent$CommandExecutionStatus/Submitted :submitted}
    (.getCommandExecutionStatus event)))
-
-(defvar- event-type-map
-  {CLEvent$CommandType/CopyBuffer :copy-buffer
-   CLEvent$CommandType/CopyBufferToImage :copy-buffer-to-image
-   CLEvent$CommandType/CopyImageToBuffer :copy-image-to-buffer
-   CLEvent$CommandType/ReadBuffer :read-buffer
-   CLEvent$CommandType/WriteBuffer :write-buffer
-   CLEvent$CommandType/ReadImage :copy-image
-   CLEvent$CommandType/WriteImage :write-image
-   CLEvent$CommandType/NDRangeKernel :execute-kernel})
-
-(extend-type CLEvent
-  HasEvent
-  (event [e]
-    e)
-  (description [e]
-    (or
-      (event-type-map (.getCommandType e))
-      :other)))
-
-(extend-type CLQueue
-  HasEvent
-  (event [q]
-    (with-queue q
-      (enqueue-marker)))
-  (description [q]
-    :queue))
 
 ;;;
 
