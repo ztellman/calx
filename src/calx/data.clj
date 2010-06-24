@@ -37,20 +37,24 @@
    :short #(.getShort ^ByteBuffer %)
    :byte #(.get ^ByteBuffer %)})
 
-(defn sizeof [sig]
-  (let [sig (if (sequential? sig) sig [sig])]
-    (reduce +
-      (map
-	{:float 4
-	 :double 8
-	 :int 4
-	 :long 8
-	 :short 2
-	 :byte 1}
-	sig))))
+(defn- transform-sig [sig]
+  (let [sig (if (map? sig) (vals sig) sig)
+	sig (if (sequential? sig) sig [sig])]
+    sig))
+
+(defn- sizeof [sig]
+  (reduce +
+    (map
+      {:float 4
+       :double 8
+       :int 4
+       :long 8
+       :short 2
+       :byte 1}
+      (transform-sig sig))))
 
 (defn to-buffer [s sig]
-  (let [sig (if (sequential? sig) sig [sig])
+  (let [sig (transform-sig sig)
 	dim (* (/ (count s) (count sig)) (sizeof sig))
 	buf (NIOUtils/directBytes dim (ByteOrder/nativeOrder))]
     (doseq [[typ val] (map list (cycle sig) s)]
@@ -60,15 +64,17 @@
 
 (defn- element-from-buffer [^ByteBuffer buf sig idx]
   (.position buf (* (sizeof sig) idx))
-  (let [element (vec (map #((get-fns %1) buf) sig))]
+  (let [transformed-sig (transform-sig sig)
+	element (doall (map #((get-fns %1) buf) (transform-sig sig)))]
     (.rewind buf)
-    (if (= 1 (count sig))
+    (if (and (not (map? sig)) (= 1 (count transformed-sig)))
       (first element)
-      element)))
+      (if (map? sig)
+	(zipmap (keys sig) element)
+	element))))
 
 (defn from-buffer [^ByteBuffer buf sig]
-  (let [sig (if (sequential? sig) sig [sig])
-	cnt (/ (.capacity buf) (sizeof sig))]
+  (let [cnt (/ (.capacity buf) (sizeof sig))]
     ^{:type ::from-buffer}
     (reify
       clojure.lang.Indexed
@@ -148,6 +154,9 @@
 	 usage))))
 
 (defn create-buffer
+  "Creates an OpenCL buffer.
+
+   'usage' may be one of [:in :out :in-out].  The default value is :in-out."
   ([dim sig]
      (create-buffer dim sig :in-out))
   ([dim sig usage]

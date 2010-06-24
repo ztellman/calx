@@ -119,26 +119,10 @@
 	 (make-array CLDevice$QueueProperties 0)
 	 (into-array properties)))))
 
-(defmacro with-queue
-  "Executes inner scope within the queue."
-  [q & body]
-  `(binding [*queue* ~q]
-     ~@body))
-
-(defmacro enqueue
-  "Executes inner scope within a default queue."
-  [& body]
-  `(with-queue (create-queue)
-     ~@body))
-
-(defmacro enqueue-and-wait
-  "Executes inner scope within a default queue, and waits for all commands to complete."
-  [& body]
-  `(enqueue
-     (try
-       ~@body
-       (finally
-	 (finish)))))
+(defn create-context
+  "Creates a context which uses the specified devices.  Using more than one device is not recommended."
+  [& devices]
+  (.createContext ^CLPlatform (platform) nil (into-array devices)))
 
 (defn finish
   "Halt execution until all enqueued operations are complete."
@@ -205,54 +189,6 @@
 
 ;;;
 
-(defmacro with-platform
-  "Defines the platform within the inner scope."
-  [platform & body]
-  `(binding [*platform* ~platform]
-     ~@body))
-
-(defn create-context
-  "Creates a context which uses the specified devices.  Using more than one device is not recommended."
-  [& devices]
-  (.createContext ^CLPlatform (platform) nil (into-array devices)))
-
-(defmacro with-context
-  "Defines the context within the inner scope."
-  [^CLContext context & body]
-  `(let [context# ~context] 
-     (with-platform (.getPlatform ^CLContext context#)
-       (binding [*context* context#]
-	 (enqueue-and-wait
-	   ~@body)))))
-
-(defmacro with-devices
-  "Defines the devices within the inner scope.  Creates a context using these devices, and releases the context once the scope is exited."
-  [devices & body]
-  `(with-platform nil
-     (let [context# (apply create-context ~devices)]
-       (try
-	 (with-context context#
-	   ~@body)
-	 (finally
-	   (.release ^CLContext context#))))))
-
-(defmacro with-cpu
-  "Executes the inner scope inside a context using the CPU."
-  [& body]
-  `(with-devices [(first (available-cpu-devices))] ~@body))
-
-(defmacro with-gpu
-  "Executes the inner scope inside a context using the GPU."
-  [& body]
-  `(with-devices [(first (available-gpu-devices))] ~@body))
-
-(defmacro with-cl
-  "Executes the inner scope inside a context using the best available device."
-  [& body]
-  `(with-devices [(best-device)] ~@body))
-
-;;;
-
 (defn compile-program
   ([source]
      (compile-program (devices) source))
@@ -262,10 +198,6 @@
        (zipmap
 	 (map #(keyword (.replace (.getFunctionName ^CLKernel %) \_ \-)) kernels)
 	 kernels))))
-
-(defmacro with-program [program & body]
-  `(binding [*program* ~program]
-     ~@body))
 
 (defn local [size]
   (CLKernel$LocalSize. size))

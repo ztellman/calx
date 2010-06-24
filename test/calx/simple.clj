@@ -7,7 +7,7 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns calx.simple
-  (:use [calx core data] :reload-all)
+  (:use [calx] :reload-all)
   (:use [clojure.test]))
 
 (def source
