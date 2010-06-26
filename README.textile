@@ -21,3 +21,5 @@ The OpenCL API is not known for its terseness; consider this "'Hello World' exam
 </code></pre>
 	    
 This is very much a work in progress, but still can be immediately useful for some purposes.  Anyone using it is encouraged to give feedback.
+
+The complete documentation can be found "here":http://ztellman.github.com/calx/calx-api.html.
