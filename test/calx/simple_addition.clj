@@ -6,7 +6,7 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
-(ns calx.simple
+(ns calx.simple-addition
   (:use [calx] :reload-all)
   (:use [clojure.test]))
 

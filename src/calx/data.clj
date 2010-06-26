@@ -57,8 +57,8 @@
   "Fills a ByteBuffer with a contiguous mixed datatype defined by 'sig'."
   [s sig]
   (let [sig (transform-sig sig)
-	dim (* (/ (count s) (count sig)) (sizeof sig))
-	buf (NIOUtils/directBytes dim (ByteOrder/nativeOrder))]
+	num-bytes (* (/ (count s) (count sig)) (sizeof sig))
+	buf (NIOUtils/directBytes num-bytes (ByteOrder/nativeOrder))]
     (doseq [[typ val] (map list (cycle sig) s)]
       ((put-fns typ) buf val))
     (.rewind ^ByteBuffer buf)
@@ -90,8 +90,8 @@
 ;;;
 
 (defprotocol Data
-  (mimic [d] [d dim] [d dim usage]
-    "Create a different buffer of the same type. 'dim' and 'usage' default to those of the original buffer.")
+  (mimic [d] [d elements] [d elements usage]
+    "Create a different buffer of the same type. 'elements' and 'usage' default to those of the original buffer.")
   (enqueue-read [d] [d range]
     "Asynchronously copies a subset of the buffer into local memory. 'range' defaults to the full buffer.
      Returns an object that, when dereferenced, halts execution until the copy is complete, then returns a seq.")
@@ -106,26 +106,51 @@
 
 (declare create-buffer-)
 
+(defn- best-match [cache num-bytes usage]
+  (->> @cache
+    (filter released?)
+    (filter #(= usage (:usage %)))
+    (map #(vector (suitability %1 num-bytes) %1))
+    (filter first)
+    (sort #(compare (second %) (first %)))
+    first
+    second))
+
+(defn- find-match [cache num-bytes usage]
+  (dosync
+    (when-let [match (best-match cache num-bytes usage)]
+      (acquire! match)
+      match)))
+
 (defn create-buffer
   "Creates an OpenCL buffer.
 
    'usage' may be one of [:in :out :in-out].  The default value is :in-out."
-  ([dim sig]
-     (create-buffer dim sig :in-out))
-  ([dim sig usage]
-     (when-let [match (dosync (let []))])
-     (create-buffer-
-       (.createByteBuffer (context) (usage-types usage) (* dim (sizeof sig)))
-       dim
-       sig
-       usage)))
+  ([elements sig]
+     (create-buffer elements sig :in-out))
+  ([elements sig usage]
+     (let [num-bytes (* elements (sizeof sig))]
+       (if-let [match (find-match (cache) num-bytes usage)]
+	 (do
+	   (println "found match")
+	   (assoc match
+	     :elements elements
+	     :signature sig))
+	 (let [buffer (create-buffer-
+			(.createByteBuffer (context) (usage-types usage) (* elements (sizeof sig)))
+			elements
+			sig
+			usage)]
+	   (println "created buffer")
+	   (dosync (alter (cache) conj buffer))
+	   buffer)))))
 
-(defrecord Buffer [^CLByteBuffer buffer, ^int capacity, ^int dimensions, signature, usage, ref-count]
+(defrecord Buffer [^CLByteBuffer buffer, ^int capacity, ^int elements, signature, usage, ref-count]
   Data
   ;;
-  (mimic [this] (mimic this dimensions))
-  (mimic [this dim] (mimic this dim usage))
-  (mimic [_ dim usage] (create-buffer dim signature usage))
+  (mimic [this] (mimic this elements))
+  (mimic [this elements] (mimic this elements usage))
+  (mimic [_ elements usage] (create-buffer elements signature usage))
   ;;
   (acquire! [_] (dosync (alter ref-count inc)))
   (release! [_] (dosync (alter ref-count dec)))
@@ -135,14 +160,16 @@
     (when (and (<= size capacity) (> size (/ capacity 2)))
       (/ (float size) capacity)))
   ;;
-  (enqueue-read [this] (enqueue-read this (interval 0 dimensions)))
+  (enqueue-read [this] (enqueue-read this (interval 0 elements)))
   (enqueue-read [this rng]
-    (let [dim (size rng)
-	  buf (NIOUtils/directBytes (* dim (sizeof signature)) (ByteOrder/nativeOrder))
+    (when-not (range? rng)
+      (throw (Exception. "'rng' must be an interval, created via (cantor/interval start end)")))
+    (let [elements (size rng)
+	  buf (NIOUtils/directBytes (* elements (sizeof signature)) (ByteOrder/nativeOrder))
 	  event (. buffer read
 		  (queue)
-		  (* dim (sizeof signature) (ul rng))
-		  (* (sizeof signature) (size rng))
+		  (* elements (sizeof signature) (ul rng))
+		  (* elements (sizeof signature))
 		  buf
 		  false
 		  (make-array CLEvent 0))]
@@ -156,8 +183,8 @@
 	  (wait-for event)
 	  (from-buffer buf signature))))))
 
-(defn- create-buffer- [^CLByteBuffer buffer dim sig usage]
-  (let [buf (Buffer. buffer (* dim (sizeof sig)) dim sig usage (ref 1))]
+(defn- create-buffer- [^CLByteBuffer buffer elements sig usage]
+  (let [buf (Buffer. buffer (* elements (sizeof sig)) elements sig usage (ref 1))]
     (with-meta buf (merge (meta buf) {:cl-object buffer}))))
 
 (defn wrap
@@ -178,10 +205,6 @@
 	 (/ (count s) sig-count)
 	 sig
 	 usage))))
-
-;;;
-
-
 
 ;;;
 

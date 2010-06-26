@@ -31,8 +31,9 @@
 (defvar *context* nil "The current context.")
 (defvar *queue* nil "The current queue.")
 (defvar *program* nil "The current program")
-(defvar *cache* nil "The current buffer cache")
 (defvar *workgroup-size* nil "The size of the workgroup")
+(defvar *params* nil "The params given to a kernel")
+(defvar *program-template* nil "A function which will return a program, given the current params.")
 
 (defn platform
   "Returns the current platform, or throws an exception if it's not defined."
@@ -44,7 +45,7 @@
   []
   (when-not *context*
     (throw (Exception. "OpenCL context not defined within this scope.")))
-  *context*)
+  (:context *context*))
 
 (defn devices
   "Returns the devices of the current context, or an exception if they're not defined."
@@ -58,12 +59,20 @@
     (throw (Exception. "OpenCL queue not defined within this scope.")))
   *queue*)
 
+(defn cache
+  "Returns the current data cache"
+  []
+  (when-not *context*
+    (throw (Exception. "OpenCL context not defined within this scope.")))
+  (:cache *context*))
+
 (defn program
   "Returns the current program, or throws an exception if it's not defined."
   []
-  (when-not *program*
-    (throw (Exception. "OpenCL program not defined within this scope.")))
-  *program*)
+  (cond
+    *program-template* (*program-template*)
+    *program* *program*
+    :else  (throw (Exception. "OpenCL program not defined within this scope."))))
 
 ;;;
 
@@ -123,7 +132,8 @@
 (defn create-context
   "Creates a context which uses the specified devices.  Using more than one device is not recommended."
   [& devices]
-  (.createContext ^CLPlatform (platform) nil (into-array devices)))
+  {:context (.createContext ^CLPlatform (platform) nil (into-array devices))
+   :cache (ref [])})
 
 (defn finish
   "Halt execution until all enqueued operations are complete."
@@ -163,11 +173,25 @@
 
 ;;;
 
+(defn- eval-templates
+  "Evaluates anything inside <<<...>>> as Clojure code."
+  [s]
+  (let [parts (.split (str s " ") "<<<|>>>")]
+    (when (even? (count parts))
+      (throw (Exception. "Mismatched <<< and >>> delimiters.")))
+    (let [parts (partition-all 2 parts)
+	  literals (map first parts)
+	  code (filter #(and % (not (empty? %))) (map second parts))
+	  code (map #(eval (read-string %)) code)
+	  combined (interleave (cons "" code) literals)]
+      (.trim ^String (apply str combined)))))
+
 (defn compile-program
+  "Compiles a OpenCL program, which contains 1 or more kernels."
   ([source]
      (compile-program (devices) source))
   ([devices source]
-     (let [program (.createProgram (context) (into-array devices) (into-array [source]))
+     (let [program (.createProgram (context) (into-array devices) (into-array [(eval-templates source)]))
 	   kernels (.createKernels ^CLProgram program)]
        (zipmap
 	 (map #(keyword (.replace (.getFunctionName ^CLKernel %) \_ \-)) kernels)

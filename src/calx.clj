@@ -71,9 +71,9 @@
 
 (defmacro with-context
   "Defines the context within the inner scope."
-  [^CLContext context & body]
+  [context & body]
   `(let [context# ~context] 
-     (with-platform (.getPlatform ^CLContext context#)
+     (with-platform (.getPlatform ^CLContext (:context context#))
        (binding [core/*context* context#]
 	 (enqueue-and-wait
 	   ~@body)))))
@@ -87,7 +87,7 @@
 	 (with-context context#
 	   ~@body)
 	 (finally
-	   (.release ^CLContext context#))))))
+	   (.release ^CLContext (:context context#)))))))
 
 (defmacro with-cpu
   "Executes the inner scope inside a context using the CPU."
