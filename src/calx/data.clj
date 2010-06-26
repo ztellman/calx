@@ -131,17 +131,14 @@
   ([elements sig usage]
      (let [num-bytes (* elements (sizeof sig))]
        (if-let [match (find-match (cache) num-bytes usage)]
-	 (do
-	   (println "found match")
-	   (assoc match
-	     :elements elements
-	     :signature sig))
+	 (assoc match
+	   :elements elements
+	   :signature sig)
 	 (let [buffer (create-buffer-
 			(.createByteBuffer (context) (usage-types usage) (* elements (sizeof sig)))
 			elements
 			sig
 			usage)]
-	   (println "created buffer")
 	   (dosync (alter (cache) conj buffer))
 	   buffer)))))
 
