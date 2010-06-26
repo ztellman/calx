@@ -80,7 +80,7 @@ namespace.
     </div><div style="margin-left: 1em;" class="toc-entry">
       <a href="#calx/enqueue-read">enqueue-read</a>
     </div><div style="margin-left: 1em;" class="toc-entry">
-      <a href="#calx/enqueue-wait">enqueue-wait</a>
+      <a href="#calx/enqueue-wait-for">enqueue-wait-for</a>
     </div><div style="margin-left: 1em;" class="toc-entry">
       <a href="#calx/finish">finish</a>
     </div><div style="margin-left: 1em;" class="toc-entry">
@@ -293,11 +293,11 @@ Returns an object that, when dereferenced, halts execution until the copy is com
 </div><div id="var-entry">
   <br />
   <hr />
-  <h2 id="calx/enqueue-wait">enqueue-wait</h2>
+  <h2 id="calx/enqueue-wait-for">enqueue-wait-for</h2>
   <span id="var-type">function</span><br />
-  <pre id="var-usage">Usage: (enqueue-wait &amp; events)
+  <pre id="var-usage">Usage: (enqueue-wait-for &amp; events)
 </pre>
-  <pre id="var-docstr">Enqueues a barrier which will halt execution until all events have completed.</pre>
+  <pre id="var-docstr">Enqueues a barrier which will halt execution until all events given as parameters have completed.</pre>
   
 </div><div id="var-entry">
   <br />
