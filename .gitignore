@@ -2,4 +2,5 @@ pom.xml
 *jar
 lib
 classes
+autodoc
 *DS_Store

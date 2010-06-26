@@ -6,7 +6,9 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
-(ns calx.data
+(ns 
+  ^{:skip-wiki true}
+  calx.data
   (:use [clojure.contrib.def :only (defmacro- defvar- defvar)]
 	[calx.core]
 	[cantor])

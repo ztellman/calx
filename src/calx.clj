@@ -6,7 +6,10 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
-(ns calx
+(ns 
+  ^{:author "Zachary Tellman"
+    :doc "An idiomatic wrapper for OpenCL"}
+  calx
   (:use
     [clojure.contrib.def :only (defmacro- defvar-)])
   (:require
@@ -44,7 +47,7 @@
 (import-fn core/finish)
 (import-fn core/enqueue-marker)
 (import-fn core/enqueue-barrier)
-(import-fn core/enqueue-wait)
+(import-fn core/enqueue-wait-for)
 (import-fn core/wait-for)
 (import-fn core/status)
 

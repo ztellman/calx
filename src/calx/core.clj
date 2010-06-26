@@ -6,7 +6,9 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
-(ns calx.core
+(ns 
+  ^{:skip-wiki true}
+  calx.core
   (:use
     [clojure.contrib.def :only (defvar defvar-)]
     [clojure.contrib.seq :only (indexed)]
@@ -150,8 +152,8 @@
   [q]
   (.enqueueMarker ^CLQueue (queue)))
 
-(defn enqueue-wait
-  "Enqueues a barrier which will halt execution until all events have completed."
+(defn enqueue-wait-for
+  "Enqueues a barrier which will halt execution until all events given as parameters have completed."
   [& events]
   (.enqueueWaitForEvents ^CLQueue (queue) (into-array (map event events))))
 
