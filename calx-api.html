@@ -70,10 +70,6 @@ namespace.
     </div><div style="margin-left: 1em;" class="toc-entry">
       <a href="#calx/create-queue">create-queue</a>
     </div><div style="margin-left: 1em;" class="toc-entry">
-      <a href="#calx/enqueue">enqueue</a>
-    </div><div style="margin-left: 1em;" class="toc-entry">
-      <a href="#calx/enqueue-and-wait">enqueue-and-wait</a>
-    </div><div style="margin-left: 1em;" class="toc-entry">
       <a href="#calx/enqueue-barrier">enqueue-barrier</a>
     </div><div style="margin-left: 1em;" class="toc-entry">
       <a href="#calx/enqueue-marker">enqueue-marker</a>
@@ -118,6 +114,8 @@ namespace.
     </div><div style="margin-left: 1em;" class="toc-entry">
       <a href="#calx/with-queue">with-queue</a>
     </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/with-queue-and-wait">with-queue-and-wait</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
       <a href="#calx/wrap">wrap</a>
     </div>
     <br />
@@ -132,7 +130,7 @@ by <span id="author">Zachary Tellman</span><br />
   (:require <span id="long-name">calx</span>))
 </pre><pre>
 </pre><h2>Overview</h2>
-<pre id="namespace-docstr">An idiomatic wrapper for OpenCL</pre>
+<pre id="namespace-docstr">An idiomatic wrapper for OpenCL.</pre>
 <br />
 <h2>Public Variables and Functions</h2>
 <div id="var-entry">
@@ -242,24 +240,6 @@ by <span id="author">Zachary Tellman</span><br />
        (create-queue device &amp; properties)
 </pre>
   <pre id="var-docstr">Creates a queue.</pre>
-  
-</div><div id="var-entry">
-  <br />
-  <hr />
-  <h2 id="calx/enqueue">enqueue</h2>
-  <span id="var-type">macro</span><br />
-  <pre id="var-usage">Usage: (enqueue &amp; body)
-</pre>
-  <pre id="var-docstr">Executes inner scope within a default queue.</pre>
-  
-</div><div id="var-entry">
-  <br />
-  <hr />
-  <h2 id="calx/enqueue-and-wait">enqueue-and-wait</h2>
-  <span id="var-type">macro</span><br />
-  <pre id="var-usage">Usage: (enqueue-and-wait &amp; body)
-</pre>
-  <pre id="var-docstr">Executes inner scope within a default queue, and waits for all commands to complete.</pre>
   
 </div><div id="var-entry">
   <br />
@@ -463,6 +443,15 @@ Returns an object that, when dereferenced, halts execution until the copy is com
   <pre id="var-usage">Usage: (with-queue q &amp; body)
 </pre>
   <pre id="var-docstr">Executes inner scope within the queue.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/with-queue-and-wait">with-queue-and-wait</h2>
+  <span id="var-type">macro</span><br />
+  <pre id="var-usage">Usage: (with-queue-and-wait q &amp; body)
+</pre>
+  <pre id="var-docstr">Executes inner scope within the queue, and waits for all commands to complete.</pre>
   
 </div><div id="var-entry">
   <br />
