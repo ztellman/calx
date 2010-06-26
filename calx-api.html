@@ -1,0 +1,498 @@
+<html>
+  <head>
+    <title>calx API reference (calx)</title>
+    <link href="static/favicon.png" rel="icon" />
+    <link href="static/favicon.png" rel="shortcut icon" />
+    <link media="all" type="text/css" href="static/clojure.css" rel="stylesheet" />
+    <link media="all" type="text/css" href="static/wiki.css" rel="stylesheet" />
+    <link media="all" type="text/css" href="static/internal.css" rel="stylesheet" />
+    <!-- TODO: are we using these (from clojure.org)? If so, add the files -->
+    <script src="file/view/code_highlighter.js" type="text/javascript"></script>
+    <script src="file/view/clojure.js" type="text/javascript"></script>
+    <style>.menuWrapper{height: 36px;}</style>
+    <!--[if lte IE 6]>
+    <link rel="stylesheet" href="http://www.wikispaces.com/_/2009051601/s/internal_ie.css" type="text/css" />
+    <![endif]-->
+  </head>
+<!--
+This document was auto-generated from the source by the clojure autodoc system.
+To report errors or ask questions about the overall documentation structure, formatting,
+etc., contact Tom Faulhaber (google mail name: tomfaulhaber).
+For errors in the documentation of a particular namespace, contact the author of that
+namespace.
+-->
+  <body>
+    <div id="AllContentContainer">
+      <div id="Header">
+	<a id="Logo" href="index.html"><img alt="Clojure" height="100" width="100" src="static/clojure-icon.gif" /></a>
+	<h1><a title="page header title" id="page-header" href="index.html">calx</a></h1>
+      </div>
+      <div id="leftcolumn"><div style="text-align: center;"></div>
+<div class="menu">
+  <div class="WikiCustomNav WikiElement wiki">
+    <a class="wiki_link" href="index.html">Overview</a><br />
+    <a class="wiki_link" href="api-index.html">API Index</a><br />
+    <a class="wiki_link" href="#">Namespaces:</a>
+    <ul id="left-sidebar-list">
+      <li><a href="calx-api.html" class="wiki_link">calx</a></li>
+    </ul>
+  </div>
+</div>
+</div>
+      <div id="rightcolumn">
+	<div id="Content">
+	  <div class="contentBox"><div class="innerContentBox">
+              <div id="content_view" class="wiki wikiPage">
+                <div id="right-sidebar"><div id="toc">
+  <h1 class="nopad">Table of Contents</h1>
+  <div style="margin-left: 1em;" class="toc-section">
+    <a href="#toc0">Overview</a>
+    <div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/acquire!">acquire!</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/available-cpu-devices">available-cpu-devices</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/available-devices">available-devices</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/available-gpu-devices">available-gpu-devices</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/available-platforms">available-platforms</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/best-device">best-device</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/compile-program">compile-program</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/context">context</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/create-buffer">create-buffer</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/create-context">create-context</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/create-queue">create-queue</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/enqueue">enqueue</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/enqueue-and-wait">enqueue-and-wait</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/enqueue-barrier">enqueue-barrier</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/enqueue-marker">enqueue-marker</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/enqueue-read">enqueue-read</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/enqueue-wait">enqueue-wait</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/finish">finish</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/from-buffer">from-buffer</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/mimic">mimic</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/platform">platform</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/program">program</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/queue">queue</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/release!">release!</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/status">status</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/to-buffer">to-buffer</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/version">version</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/wait-for">wait-for</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/with-cl">with-cl</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/with-context">with-context</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/with-cpu">with-cpu</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/with-devices">with-devices</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/with-gpu">with-gpu</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/with-platform">with-platform</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/with-queue">with-queue</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/wrap">wrap</a>
+    </div>
+    <br />
+  </div>
+</div>
+</div>
+                <div id="content-tag"><h1 id="overview">API for <span id="namespace-name">calx</span></h1>
+by <span id="author">Zachary Tellman</span><br />
+<br />Usage:
+<pre>
+(ns your-namespace
+  (:require <span id="long-name">calx</span>))
+</pre><pre>
+</pre><h2>Overview</h2>
+<pre id="namespace-docstr">An idiomatic wrapper for OpenCL</pre>
+<br />
+<h2>Public Variables and Functions</h2>
+<div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/acquire!">acquire!</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (acquire! d)
+</pre>
+  <pre id="var-docstr">Acquires the buffer.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/available-cpu-devices">available-cpu-devices</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (available-cpu-devices)
+       (available-cpu-devices platform)
+</pre>
+  <pre id="var-docstr">Returns all available CPU devices.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/available-devices">available-devices</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (available-devices)
+       (available-devices platform)
+</pre>
+  <pre id="var-docstr">Returns all available devices.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/available-gpu-devices">available-gpu-devices</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (available-gpu-devices)
+       (available-gpu-devices platform)
+</pre>
+  <pre id="var-docstr">Returns all available GPU devices.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/available-platforms">available-platforms</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (available-platforms)
+</pre>
+  <pre id="var-docstr">Returns a list of all available platforms.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/best-device">best-device</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (best-device)
+       (best-device platform)
+</pre>
+  <pre id="var-docstr">Returns the best available device.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/compile-program">compile-program</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (compile-program source)
+       (compile-program devices source)
+</pre>
+  <pre id="var-docstr">Compiles a OpenCL program, which contains 1 or more kernels.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/context">context</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (context)
+</pre>
+  <pre id="var-docstr">Returns the current context, or throws an exception if it's not defined.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/create-buffer">create-buffer</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (create-buffer elements sig)
+       (create-buffer elements sig usage)
+</pre>
+  <pre id="var-docstr">Creates an OpenCL buffer.
+
+'usage' may be one of [:in :out :in-out].  The default value is :in-out.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/create-context">create-context</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (create-context &amp; devices)
+</pre>
+  <pre id="var-docstr">Creates a context which uses the specified devices.  Using more than one device is not recommended.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/create-queue">create-queue</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (create-queue)
+       (create-queue device &amp; properties)
+</pre>
+  <pre id="var-docstr">Creates a queue.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/enqueue">enqueue</h2>
+  <span id="var-type">macro</span><br />
+  <pre id="var-usage">Usage: (enqueue &amp; body)
+</pre>
+  <pre id="var-docstr">Executes inner scope within a default queue.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/enqueue-and-wait">enqueue-and-wait</h2>
+  <span id="var-type">macro</span><br />
+  <pre id="var-usage">Usage: (enqueue-and-wait &amp; body)
+</pre>
+  <pre id="var-docstr">Executes inner scope within a default queue, and waits for all commands to complete.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/enqueue-barrier">enqueue-barrier</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (enqueue-barrier)
+</pre>
+  <pre id="var-docstr">Ensures that all previously enqueued commands will complete before new commands will begin.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/enqueue-marker">enqueue-marker</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (enqueue-marker q)
+</pre>
+  <pre id="var-docstr">Returns an event which represents the progress of all previously enqueued commands.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/enqueue-read">enqueue-read</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (enqueue-read d)
+       (enqueue-read d range)
+</pre>
+  <pre id="var-docstr">Asynchronously copies a subset of the buffer into local memory. 'range' defaults to the full buffer.
+Returns an object that, when dereferenced, halts execution until the copy is complete, then returns a seq.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/enqueue-wait">enqueue-wait</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (enqueue-wait &amp; events)
+</pre>
+  <pre id="var-docstr">Enqueues a barrier which will halt execution until all events have completed.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/finish">finish</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (finish)
+</pre>
+  <pre id="var-docstr">Halt execution until all enqueued operations are complete.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/from-buffer">from-buffer</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (from-buffer buf sig)
+</pre>
+  <pre id="var-docstr">Pulls out mixed datatypes from a ByteBuffer, per 'sig'.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/mimic">mimic</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (mimic d)
+       (mimic d elements)
+       (mimic d elements usage)
+</pre>
+  <pre id="var-docstr">Create a different buffer of the same type. 'elements' and 'usage' default to those of the original buffer.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/platform">platform</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (platform)
+</pre>
+  <pre id="var-docstr">Returns the current platform, or throws an exception if it's not defined.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/program">program</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (program)
+</pre>
+  <pre id="var-docstr">Returns the current program, or throws an exception if it's not defined.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/queue">queue</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (queue)
+</pre>
+  <pre id="var-docstr">Returns the current queue, or throws an exception if it's not defined.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/release!">release!</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (release! d)
+</pre>
+  <pre id="var-docstr">Releases the buffer.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/status">status</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (status event)
+</pre>
+  <pre id="var-docstr">Returns the status of the event.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/to-buffer">to-buffer</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (to-buffer s sig)
+</pre>
+  <pre id="var-docstr">Fills a ByteBuffer with a contiguous mixed datatype defined by 'sig'.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/version">version</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (version)
+       (version platform)
+</pre>
+  <pre id="var-docstr">Returns the version of the OpenCL implementation.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/wait-for">wait-for</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (wait-for &amp; events)
+</pre>
+  <pre id="var-docstr">Halt execution until all events are complete.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/with-cl">with-cl</h2>
+  <span id="var-type">macro</span><br />
+  <pre id="var-usage">Usage: (with-cl &amp; body)
+</pre>
+  <pre id="var-docstr">Executes the inner scope inside a context using the best available device.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/with-context">with-context</h2>
+  <span id="var-type">macro</span><br />
+  <pre id="var-usage">Usage: (with-context context &amp; body)
+</pre>
+  <pre id="var-docstr">Defines the context within the inner scope.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/with-cpu">with-cpu</h2>
+  <span id="var-type">macro</span><br />
+  <pre id="var-usage">Usage: (with-cpu &amp; body)
+</pre>
+  <pre id="var-docstr">Executes the inner scope inside a context using the CPU.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/with-devices">with-devices</h2>
+  <span id="var-type">macro</span><br />
+  <pre id="var-usage">Usage: (with-devices devices &amp; body)
+</pre>
+  <pre id="var-docstr">Defines the devices within the inner scope.  Creates a context using these devices, and releases the context once the scope is exited.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/with-gpu">with-gpu</h2>
+  <span id="var-type">macro</span><br />
+  <pre id="var-usage">Usage: (with-gpu &amp; body)
+</pre>
+  <pre id="var-docstr">Executes the inner scope inside a context using the GPU.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/with-platform">with-platform</h2>
+  <span id="var-type">macro</span><br />
+  <pre id="var-usage">Usage: (with-platform platform &amp; body)
+</pre>
+  <pre id="var-docstr">Defines the platform within the inner scope.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/with-queue">with-queue</h2>
+  <span id="var-type">macro</span><br />
+  <pre id="var-usage">Usage: (with-queue q &amp; body)
+</pre>
+  <pre id="var-docstr">Executes inner scope within the queue.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/wrap">wrap</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (wrap s)
+       (wrap s sig)
+       (wrap s sig usage)
+</pre>
+  <pre id="var-docstr">Copies a sequence into an OpenCL buffer.  Type is assumed to be uniform across the sequence.
+
+'usage' may be one of [:in :out :in-out].  The default value is :in-out.</pre>
+  
+</div>
+
+
+</div>
+              </div>
+            </div>
+          </div>
+	</div>
+	<div id="foot">
+	  <div style="text-align: center;" id="copyright">No copyright info </div>
+	</div>
+      </div>
+      <div id="DesignedBy">Logo &amp; site design by <a title="Visit Tom Hickey's website." href="http://www.tomhickey.com">Tom Hickey</a>.<br />
+      Clojure auto-documentation system by Tom Faulhaber.</div>
+    </div>
+    <!-- /AllContentContainer -->
+  </body>
+
+</html>

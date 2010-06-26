@@ -1,0 +1,86 @@
+<html>
+  <head>
+    <title>calx - Overview</title>
+    <link href="static/favicon.png" rel="icon" />
+    <link href="static/favicon.png" rel="shortcut icon" />
+    <link media="all" type="text/css" href="static/clojure.css" rel="stylesheet" />
+    <link media="all" type="text/css" href="static/wiki.css" rel="stylesheet" />
+    <link media="all" type="text/css" href="static/internal.css" rel="stylesheet" />
+    <!-- TODO: are we using these (from clojure.org)? If so, add the files -->
+    <script src="file/view/code_highlighter.js" type="text/javascript"></script>
+    <script src="file/view/clojure.js" type="text/javascript"></script>
+    <style>.menuWrapper{height: 36px;}</style>
+    <!--[if lte IE 6]>
+    <link rel="stylesheet" href="http://www.wikispaces.com/_/2009051601/s/internal_ie.css" type="text/css" />
+    <![endif]-->
+  </head>
+<!--
+This document was auto-generated from the source by the clojure autodoc system.
+To report errors or ask questions about the overall documentation structure, formatting,
+etc., contact Tom Faulhaber (google mail name: tomfaulhaber).
+For errors in the documentation of a particular namespace, contact the author of that
+namespace.
+-->
+  <body>
+    <div id="AllContentContainer">
+      <div id="Header">
+	<a id="Logo" href="index.html"><img alt="Clojure" height="100" width="100" src="static/clojure-icon.gif" /></a>
+	<h1><a title="page header title" id="page-header" href="index.html">calx</a></h1>
+      </div>
+      <div id="leftcolumn"><div style="text-align: center;"></div>
+<div class="menu">
+  <div class="WikiCustomNav WikiElement wiki">
+    <a class="wiki_link" href="index.html">Overview</a><br />
+    <a class="wiki_link" href="api-index.html">API Index</a><br />
+    <a class="wiki_link" href="#">Namespaces:</a>
+    <ul id="left-sidebar-list">
+      <li><a href="calx-api.html" class="wiki_link">calx</a></li>
+    </ul>
+  </div>
+</div>
+</div>
+      <div id="rightcolumn">
+	<div id="Content">
+	  <div class="contentBox"><div class="innerContentBox">
+              <div id="content_view" class="wiki wikiPage">
+                <div id="right-sidebar"><div id="toc">
+  <h1 class="nopad">Table of Contents</h1>
+  <div style="margin-left: 1em;" class="toc-section">
+    <a href="#calx">calx</a>
+    
+    <br />
+  </div>
+</div>
+</div>
+                <div id="content-tag"><h1 id="toc0">An Overview of the <span id="header-project">calx</span> API</h1>
+<br />
+<div id="project-description">An idiomatic wrapper for OpenCL.</div>
+<br />
+<div id="namespace-entry">
+  <br />
+  <hr />
+  <h2 id="calx">calx</h2>
+  by <span id="author">Zachary Tellman</span><br />
+  <a href="calx-api.html" id="api-link">Detailed API documentation</a><br />
+  <pre id="namespace-docstr">An idiomatic wrapper for OpenCL</pre>
+  
+  Public variables and functions:
+  <span id="var-link"><a href="calx-api.html#calx/acquire!" id="var-tag">acquire!</a> </span><span id="var-link"><a href="calx-api.html#calx/available-cpu-devices" id="var-tag">available-cpu-devices</a> </span><span id="var-link"><a href="calx-api.html#calx/available-devices" id="var-tag">available-devices</a> </span><span id="var-link"><a href="calx-api.html#calx/available-gpu-devices" id="var-tag">available-gpu-devices</a> </span><span id="var-link"><a href="calx-api.html#calx/available-platforms" id="var-tag">available-platforms</a> </span><span id="var-link"><a href="calx-api.html#calx/best-device" id="var-tag">best-device</a> </span><span id="var-link"><a href="calx-api.html#calx/compile-program" id="var-tag">compile-program</a> </span><span id="var-link"><a href="calx-api.html#calx/context" id="var-tag">context</a> </span><span id="var-link"><a href="calx-api.html#calx/create-buffer" id="var-tag">create-buffer</a> </span><span id="var-link"><a href="calx-api.html#calx/create-context" id="var-tag">create-context</a> </span><span id="var-link"><a href="calx-api.html#calx/create-queue" id="var-tag">create-queue</a> </span><span id="var-link"><a href="calx-api.html#calx/enqueue" id="var-tag">enqueue</a> </span><span id="var-link"><a href="calx-api.html#calx/enqueue-and-wait" id="var-tag">enqueue-and-wait</a> </span><span id="var-link"><a href="calx-api.html#calx/enqueue-barrier" id="var-tag">enqueue-barrier</a> </span><span id="var-link"><a href="calx-api.html#calx/enqueue-marker" id="var-tag">enqueue-marker</a> </span><span id="var-link"><a href="calx-api.html#calx/enqueue-read" id="var-tag">enqueue-read</a> </span><span id="var-link"><a href="calx-api.html#calx/enqueue-wait" id="var-tag">enqueue-wait</a> </span><span id="var-link"><a href="calx-api.html#calx/finish" id="var-tag">finish</a> </span><span id="var-link"><a href="calx-api.html#calx/from-buffer" id="var-tag">from-buffer</a> </span><span id="var-link"><a href="calx-api.html#calx/mimic" id="var-tag">mimic</a> </span><span id="var-link"><a href="calx-api.html#calx/platform" id="var-tag">platform</a> </span><span id="var-link"><a href="calx-api.html#calx/program" id="var-tag">program</a> </span><span id="var-link"><a href="calx-api.html#calx/queue" id="var-tag">queue</a> </span><span id="var-link"><a href="calx-api.html#calx/release!" id="var-tag">release!</a> </span><span id="var-link"><a href="calx-api.html#calx/status" id="var-tag">status</a> </span><span id="var-link"><a href="calx-api.html#calx/to-buffer" id="var-tag">to-buffer</a> </span><span id="var-link"><a href="calx-api.html#calx/version" id="var-tag">version</a> </span><span id="var-link"><a href="calx-api.html#calx/wait-for" id="var-tag">wait-for</a> </span><span id="var-link"><a href="calx-api.html#calx/with-cl" id="var-tag">with-cl</a> </span><span id="var-link"><a href="calx-api.html#calx/with-context" id="var-tag">with-context</a> </span><span id="var-link"><a href="calx-api.html#calx/with-cpu" id="var-tag">with-cpu</a> </span><span id="var-link"><a href="calx-api.html#calx/with-devices" id="var-tag">with-devices</a> </span><span id="var-link"><a href="calx-api.html#calx/with-gpu" id="var-tag">with-gpu</a> </span><span id="var-link"><a href="calx-api.html#calx/with-platform" id="var-tag">with-platform</a> </span><span id="var-link"><a href="calx-api.html#calx/with-queue" id="var-tag">with-queue</a> </span><span id="var-link"><a href="calx-api.html#calx/wrap" id="var-tag">wrap</a> </span><br />
+  
+</div>
+</div>
+              </div>
+            </div>
+          </div>
+	</div>
+	<div id="foot">
+	  <div style="text-align: center;" id="copyright">No copyright info </div>
+	</div>
+      </div>
+      <div id="DesignedBy">Logo &amp; site design by <a title="Visit Tom Hickey's website." href="http://www.tomhickey.com">Tom Hickey</a>.<br />
+      Clojure auto-documentation system by Tom Faulhaber.</div>
+    </div>
+    <!-- /AllContentContainer -->
+  </body>
+
+</html>
