@@ -8,7 +8,7 @@
 
 (ns 
   ^{:author "Zachary Tellman"
-    :doc "An idiomatic wrapper for OpenCL"}
+    :doc "An idiomatic wrapper for OpenCL."}
   calx
   (:use
     [clojure.contrib.def :only (defmacro- defvar-)])
@@ -66,6 +66,25 @@
 
 ;;;
 
+(defmacro with-queue
+  "Executes inner scope within the queue."
+  [q & body]
+  `(binding [core/*queue* ~q]
+     ~@body))
+
+(defmacro with-queue-and-wait
+  "Executes inner scope within the queue, and waits for all commands to complete."
+  [q & body]
+  `(with-queue ~q
+     (try
+       ~@body
+       (finally
+	 (finish)))))
+
+(defmacro with-program [program & body]
+  `(binding [core/*program* ~program]
+     ~@body))
+
 (defmacro with-platform
   "Defines the platform within the inner scope."
   [platform & body]
@@ -78,7 +97,7 @@
   `(let [context# ~context] 
      (with-platform (.getPlatform ^CLContext (:context context#))
        (binding [core/*context* context#]
-	 (enqueue-and-wait
+	 (with-queue-and-wait (create-queue)
 	   ~@body)))))
 
 (defmacro with-devices
@@ -106,31 +125,6 @@
   "Executes the inner scope inside a context using the best available device."
   [& body]
   `(with-devices [(best-device)] ~@body))
-
-(defmacro with-queue
-  "Executes inner scope within the queue."
-  [q & body]
-  `(binding [core/*queue* ~q]
-     ~@body))
-
-(defmacro enqueue
-  "Executes inner scope within a default queue."
-  [& body]
-  `(with-queue (create-queue)
-     ~@body))
-
-(defmacro enqueue-and-wait
-  "Executes inner scope within a default queue, and waits for all commands to complete."
-  [& body]
-  `(enqueue
-     (try
-       ~@body
-       (finally
-	 (finish)))))
-
-(defmacro with-program [program & body]
-  `(binding [core/*program* ~program]
-     ~@body))
 
 ;;;
 
