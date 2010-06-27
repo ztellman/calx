@@ -72,7 +72,11 @@ namespace.
     </div><div style="margin-left: 1em;" class="toc-entry">
       <a href="#calx/enqueue-barrier">enqueue-barrier</a>
     </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/enqueue-copy">enqueue-copy</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
       <a href="#calx/enqueue-marker">enqueue-marker</a>
+    </div><div style="margin-left: 1em;" class="toc-entry">
+      <a href="#calx/enqueue-overwrite">enqueue-overwrite</a>
     </div><div style="margin-left: 1em;" class="toc-entry">
       <a href="#calx/enqueue-read">enqueue-read</a>
     </div><div style="margin-left: 1em;" class="toc-entry">
@@ -253,11 +257,29 @@ by <span id="author">Zachary Tellman</span><br />
 </div><div id="var-entry">
   <br />
   <hr />
+  <h2 id="calx/enqueue-copy">enqueue-copy</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (enqueue-copy destination destination-offset source source-range)
+</pre>
+  <pre id="var-docstr">Enqueues a copy from a subset of the source onto the destination.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
   <h2 id="calx/enqueue-marker">enqueue-marker</h2>
   <span id="var-type">function</span><br />
   <pre id="var-usage">Usage: (enqueue-marker q)
 </pre>
   <pre id="var-docstr">Returns an event which represents the progress of all previously enqueued commands.</pre>
+  
+</div><div id="var-entry">
+  <br />
+  <hr />
+  <h2 id="calx/enqueue-overwrite">enqueue-overwrite</h2>
+  <span id="var-type">function</span><br />
+  <pre id="var-usage">Usage: (enqueue-overwrite destination destination-range source)
+</pre>
+  <pre id="var-docstr">Asynchronously copies a buffer from local memory onto the given subset of the buffer.</pre>
   
 </div><div id="var-entry">
   <br />
@@ -268,6 +290,7 @@ by <span id="author">Zachary Tellman</span><br />
        (enqueue-read d range)
 </pre>
   <pre id="var-docstr">Asynchronously copies a subset of the buffer into local memory. 'range' defaults to the full buffer.
+
 Returns an object that, when dereferenced, halts execution until the copy is complete, then returns a seq.</pre>
   
 </div><div id="var-entry">
