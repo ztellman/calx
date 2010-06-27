@@ -164,7 +164,8 @@
     (when (and (<= size capacity) (> size (/ capacity 2)))
       (/ (float size) capacity)))
   ;;
-  (enqueue-read [this] (enqueue-read this (interval 0 elements)))
+  (enqueue-read [this]
+    (enqueue-read this (interval 0 elements)))
   (enqueue-read [this rng]
     (when-not (range? rng)
       (throw (Exception. "'rng' must be an interval, created via (cantor/interval upper lower)")))

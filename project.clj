@@ -1,4 +1,4 @@
-(defproject calx "0.1.0-SNAPSHOT"
+(defproject calx "0.1.0"
   :description "An idiomatic wrapper for OpenCL."
   :dev-dependencies [[swank-clojure "1.2.1"]
 		     [autodoc "0.7.1"]]
