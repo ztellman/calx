@@ -62,6 +62,8 @@
 (import-fn #'data/release!)
 (import-fn #'data/acquire!)
 (import-fn #'data/enqueue-read)
+(import-fn #'data/enqueue-copy)
+(import-fn #'data/enqueue-overwrite)
 (import-fn data/create-buffer)
 
 ;;;

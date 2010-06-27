@@ -96,7 +96,12 @@
     "Create a different buffer of the same type. 'elements' and 'usage' default to those of the original buffer.")
   (enqueue-read [d] [d range]
     "Asynchronously copies a subset of the buffer into local memory. 'range' defaults to the full buffer.
+
      Returns an object that, when dereferenced, halts execution until the copy is complete, then returns a seq.")
+  (enqueue-overwrite [destination destination-range source]
+    "Asynchronously copies a buffer from local memory onto the given subset of the buffer.")
+  (enqueue-copy [destination destination-offset source source-range]
+    "Enqueues a copy from a subset of the source onto the destination.")
   (suitability [a size]
     "Returns the suitability for containing a data set of the specified size.")
   (released? [d]
@@ -162,12 +167,12 @@
   (enqueue-read [this] (enqueue-read this (interval 0 elements)))
   (enqueue-read [this rng]
     (when-not (range? rng)
-      (throw (Exception. "'rng' must be an interval, created via (cantor/interval start end)")))
+      (throw (Exception. "'rng' must be an interval, created via (cantor/interval upper lower)")))
     (let [elements (size rng)
 	  buf (NIOUtils/directBytes (* elements (sizeof signature)) (ByteOrder/nativeOrder))
 	  event (. buffer read
 		  (queue)
-		  (* elements (sizeof signature) (ul rng))
+		  (* elements (sizeof signature) (upper rng))
 		  (* elements (sizeof signature))
 		  buf
 		  false
@@ -180,7 +185,27 @@
 	clojure.lang.IDeref
 	(deref [_]
 	  (wait-for event)
-	  (from-buffer buf signature))))))
+	  (from-buffer buf signature)))))
+  ;;
+  (enqueue-overwrite [_ dst-range src]
+    (let [sig-size (sizeof signature)]
+      (. buffer writeBytes
+	(queue)
+	(* sig-size (upper dst-range))
+	(* sig-size (size dst-range))
+	src
+	true
+	(make-array CLEvent 0))))
+  ;;
+  (enqueue-copy [_ dst-offset src src-range]
+    (let [sig-size (sizeof signature)]
+      (. (:buffer src) copyTo
+	(queue)
+	(* sig-size (upper src-range))
+	(* sig-size (size src-range))
+	buffer
+	(* sig-size dst-offset)
+	(make-array CLEvent 0)))))
 
 (defn- create-buffer- [^CLByteBuffer buffer elements sig usage]
   (let [buf (Buffer. buffer (* elements (sizeof sig)) elements sig usage (ref 1))]
