@@ -6,13 +6,26 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
-(ns calx.byte-buffer
+(ns calx.test.data
   (:use [calx.data] [clojure.contrib.combinatorics] :reload-all)
   (:use [clojure.test]))
 
 (def types [:byte :short :int :long :float :double])
 
-(deftest to-and-from
+(defn equivalent? [a b]
+  (every? identity (map == a b)))
+
+(deftest mixed-types
   (doseq [sig (permutations types)]
     (let [data (range (count sig))]
-      (is (= data (first (from-buffer (to-buffer data sig) sig)))))))
+      (is (equivalent? data (first (from-buffer (to-buffer data sig) sig)))))))
+
+(def structures
+  {[:int [:int :int] :int] [1 [2 3] 4]
+   '(:int {:a :int :b :int} :int) '(1 {:a 2 :b 3} 4)
+   {:a [:int :int :int :int]} {:a [1 2 3 4]}})
+
+(deftest mixed-structures
+  (let [buf (to-buffer [1 2 3 4] :int)]
+    (doseq [[structure result] structures]
+      (is (= result (first (from-buffer buf structure)))))))

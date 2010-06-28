@@ -9,9 +9,11 @@
 (ns 
   ^{:skip-wiki true}
   calx.data
-  (:use [clojure.contrib.def :only (defmacro- defvar- defvar)]
-	[calx.core]
-	[cantor])
+  (:use
+    [clojure.contrib.def :only (defmacro- defvar- defvar)]
+    [clojure.walk]
+    [calx.core]
+    [cantor])
   (:import [com.nativelibs4java.opencl CLContext CLByteBuffer CLMem CLMem$Usage CLEvent]
 	   [com.nativelibs4java.util NIOUtils]
 	   [java.nio ByteOrder ByteBuffer]))
@@ -39,53 +41,74 @@
    :short #(.getShort ^ByteBuffer %)
    :byte #(.get ^ByteBuffer %)})
 
-(defn- transform-sig [sig]
-  (let [sig (if (map? sig) (vals sig) sig)
-	sig (if (sequential? sig) sig [sig])]
-    sig))
+(defprotocol Signature
+  (num-bytes [s])
+  (flattened [s])
+  (signature [s])
+  (get-element [s b]))
 
-(defn- sizeof [sig]
-  (reduce +
-    (map
-      {:float 4
-       :double 8
-       :int 4
-       :long 8
-       :short 2
-       :byte 1}
-      (transform-sig sig))))
+(defn- signature? [s]
+  (= (->> s meta :type) ::signature))
+
+(defvar- type?
+  #{:float :double :byte :short :int :long})
+
+(defn- create-signature [s]
+  (if (signature? s)
+    s
+    (let [wrapped (if (sequential? s) s [s])
+	  flattened (flatten (postwalk #(if (map? %) (vals %) %) wrapped))
+	  num-bytes (reduce +
+		      (map
+			{:float 4
+			 :double 8
+			 :int 4
+			 :long 8
+			 :short 2
+			 :byte 1}
+			flattened))]
+      ^{:type ::signature}
+      (reify Signature
+	(num-bytes [_] num-bytes)
+	(flattened [_] flattened)
+	(signature [_] s)
+	(get-element [_ buf]
+	  (postwalk
+	    #(if (type? %)
+	       ((get-fns %) buf)
+	       %)
+	    s))))))
+
+;;;
 
 (defn to-buffer
-  "Fills a ByteBuffer with a contiguous mixed datatype defined by 'sig'."
+  "Fills a ByteBuffer with a contiguous mixed datatype defined by 'sig'.  's' is assumed to be flat."
   [s sig]
-  (let [sig (transform-sig sig)
-	num-bytes (* (/ (count s) (count sig)) (sizeof sig))
-	buf (NIOUtils/directBytes num-bytes (ByteOrder/nativeOrder))]
-    (doseq [[typ val] (map list (cycle sig) s)]
+  (let [sig (create-signature sig)
+	buffer-size (* (/ (count s) (count (flattened sig))) (num-bytes sig))
+	buf (NIOUtils/directBytes buffer-size (ByteOrder/nativeOrder))]
+    (doseq [[typ val] (map list (cycle (flattened sig)) s)]
       ((put-fns typ) buf val))
     (.rewind ^ByteBuffer buf)
     buf))
 
 (defn- element-from-buffer [^ByteBuffer buf sig idx]
-  (.position buf (* (sizeof sig) idx))
-  (let [transformed-sig (transform-sig sig)
-	element (doall (map #((get-fns %1) buf) (transform-sig sig)))]
-    (.rewind buf)
-    (if (and (not (map? sig)) (= 1 (count transformed-sig)))
-      (first element)
-      (if (map? sig)
-	(zipmap (keys sig) element)
-	element))))
+  (let [buf ^ByteBuffer (.asReadOnlyBuffer buf)]
+    (.order buf (ByteOrder/nativeOrder))
+    (.position buf (* (num-bytes sig) idx))
+    (get-element sig buf)))
 
 (defn from-buffer
   "Pulls out mixed datatypes from a ByteBuffer, per 'sig'."
   [^ByteBuffer buf sig]
-  (let [cnt (/ (.capacity buf) (sizeof sig))]
+  (let [sig (create-signature sig)
+	cnt (/ (.capacity buf) (num-bytes sig))]
     ^{:type ::from-buffer}
     (reify
       clojure.lang.Indexed
       (nth [_ i] (element-from-buffer buf sig i))
       (count [_] cnt)
+      clojure.lang.Sequential
       clojure.lang.Seqable
       (seq [this] (map #(nth this %) (range cnt))))))
 
@@ -136,13 +159,13 @@
   ([elements sig]
      (create-buffer elements sig :in-out))
   ([elements sig usage]
-     (let [num-bytes (* elements (sizeof sig))]
-       (if-let [match (find-match (cache) num-bytes usage)]
+     (let [sig (create-signature sig)]
+       (if-let [match (find-match (cache) (num-bytes sig) usage)]
 	 (assoc match
 	   :elements elements
 	   :signature sig)
 	 (let [buffer (create-buffer-
-			(.createByteBuffer (context) (usage-types usage) (* elements (sizeof sig)))
+			(.createByteBuffer (context) (usage-types usage) (* elements (num-bytes sig)))
 			elements
 			sig
 			usage)]
@@ -169,11 +192,11 @@
     (when-not (range? rng)
       (throw (Exception. "'rng' must be an interval, created via (cantor/interval upper lower)")))
     (let [elements (size rng)
-	  buf (NIOUtils/directBytes (* elements (sizeof signature)) (ByteOrder/nativeOrder))
+	  buf (NIOUtils/directBytes (* elements (num-bytes signature)) (ByteOrder/nativeOrder))
 	  event (. buffer read
 		  (queue)
-		  (* elements (sizeof signature) (upper rng))
-		  (* elements (sizeof signature))
+		  (* elements (num-bytes signature) (upper rng))
+		  (* elements (num-bytes signature))
 		  buf
 		  false
 		  (make-array CLEvent 0))]
@@ -188,31 +211,30 @@
 	  (from-buffer buf signature)))))
   ;;
   (enqueue-overwrite [_ dst-range src]
-    (let [sig-size (sizeof signature)]
-      (. buffer writeBytes
-	(queue)
-	(* sig-size (upper dst-range))
-	(* sig-size (size dst-range))
-	src
-	true
-	(make-array CLEvent 0))))
+    (. buffer writeBytes
+      (queue)
+      (* (num-bytes signature) (upper dst-range))
+      (* (num-bytes signature) (size dst-range))
+      src
+      true
+      (make-array CLEvent 0)))
   ;;
   (enqueue-copy [_ dst-offset src src-range]
-    (let [sig-size (sizeof signature)]
-      (. (:buffer src) copyTo
-	(queue)
-	(* sig-size (upper src-range))
-	(* sig-size (size src-range))
-	buffer
-	(* sig-size dst-offset)
-	(make-array CLEvent 0)))))
+    (. (:buffer src) copyTo
+      (queue)
+      (* (num-bytes signature) (upper src-range))
+      (* (num-bytes signature) (size src-range))
+      buffer
+      (* (num-bytes signature) dst-offset)
+      (make-array CLEvent 0))))
 
 (defn- create-buffer- [^CLByteBuffer buffer elements sig usage]
-  (let [buf (Buffer. buffer (* elements (sizeof sig)) elements sig usage (ref 1))]
+  (let [sig (create-signature sig)
+	buf (Buffer. buffer (* elements (num-bytes sig)) elements sig usage (ref 1))]
     (with-meta buf (merge (meta buf) {:cl-object buffer}))))
 
 (defn wrap
-  "Copies a sequence into an OpenCL buffer.  Type is assumed to be uniform across the sequence.
+  "Copies a sequence into an OpenCL buffer.
 
    'usage' may be one of [:in :out :in-out].  The default value is :in-out."
   ([s]
@@ -220,8 +242,10 @@
   ([s sig]
      (wrap s sig :in-out))
   ([s sig usage]
-     (let [sig-count (if (sequential? sig) (count sig) 1)
-	   num-bytes (* (sizeof sig) (/ (count s) sig-count))]
+     (let [sig (create-signature sig)
+	   s (flatten s)
+	   num-bytes (* (num-bytes sig) (/ (count s) (count (flattened sig))))
+	   sig-count (count (flattened sig))]
        (when-not (zero? (rem (count s) sig-count))
 	 (throw (Exception. (format "Sequence count (%d) not evenly divisable by signature count (%d)." (count s) sig-count))))
        (create-buffer-

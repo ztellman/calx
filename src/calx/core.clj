@@ -210,7 +210,7 @@
 (defn- to-dim-array [x]
   (cond
     (number? x) (int-array [x])
-    (cartesian? x) (map #(x %) (range (dimension x)))
+    (cartesian? x) (map #(x %) (range (count x)))
     (sequential? x) (into-array x)))
 
 (defn enqueue-kernel
