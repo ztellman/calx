@@ -6,25 +6,37 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
-(ns calx.test.simple-addition
+(ns calx.test.mixed-datatype
   (:use [calx] :reload-all)
   (:use [clojure.test]))
 
 (def source
-  "__kernel void vec_add (
-       __global const float *a,
-       __global const float *b,
-       __global float *c) {
+  "struct __attribute__ ((packed)) mixed {
+     int val;
+     char step;
+   };
+
+   __kernel void invert (
+       __global const struct mixed *a,
+       __global struct mixed *b) {
     int gid = get_global_id(0);
-    c[gid] = a[gid] + b[gid];
+    struct mixed src = a[gid];
+    struct mixed m;
+    m.val = src.val + src.step;
+    m.step = src.step;
+    b[gid] = m;
   }")
 
-(deftest simple-addition
+(deftest invert
   (let [value (with-cl
 		(with-program (compile-program source)
-		  (let [a (wrap [1 2 3] :float)
-			b (wrap [1 2 3] :float)
-			c (mimic a)]
-		    (enqueue-kernel :vec-add 3 a b c)
-		    (enqueue-read c))))]
-    (is (= [2 4 6] @value))))
+		  (let [a (wrap [10 1 0 5] [:int :byte])
+			b (mimic a)]
+		    (enqueue-read
+		      (loop [i 0, a a, b b]
+			(if (< 1000 i)
+			  a
+			  (do
+			    (enqueue-kernel :invert 2 a b)
+			    (recur (inc i) b a))))))))]
+    (is (= @value [[1011 1] [5005 5]]))))
