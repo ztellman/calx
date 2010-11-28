@@ -7,12 +7,14 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns calx.test.mixed-datatype
-  (:use [calx] :reload-all)
-  (:use [clojure.test]))
+  (:use [calx])
+  (:use
+    [gloss.core]
+    [clojure.test]))
 
 (def source
   "struct __attribute__ ((packed)) mixed {
-     int val;
+     short val;
      char step;
    };
 
@@ -27,10 +29,12 @@
     b[gid] = m;
   }")
 
+(def frame [:int16 :byte])
+
 (deftest invert
   (let [value (with-cl
 		(with-program (compile-program source)
-		  (let [a (wrap [10 1 0 5] [:int :byte])
+		  (let [a (wrap [[0 2] [0 5]] frame)
 			b (mimic a)]
 		    (enqueue-read
 		      (loop [i 0, a a, b b]
@@ -39,4 +43,4 @@
 			  (do
 			    (enqueue-kernel :invert 2 a b)
 			    (recur (inc i) b a))))))))]
-    (is (= @value [[1011 1] [5005 5]]))))
+    (is (= @value [[2002 2] [5005 5]]))))

@@ -7,7 +7,7 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns calx.test.simple-addition
-  (:use [calx] :reload-all)
+  (:use [calx])
   (:use [clojure.test]))
 
 (def source
@@ -22,8 +22,8 @@
 (deftest simple-addition
   (let [value (with-cl
 		(with-program (compile-program source)
-		  (let [a (wrap [1 2 3] :float)
-			b (wrap [1 2 3] :float)
+		  (let [a (wrap [1 2 3] :float32)
+			b (wrap [1 2 3] :float32)
 			c (mimic a)]
 		    (enqueue-kernel :vec-add 3 a b c)
 		    (enqueue-read c))))]

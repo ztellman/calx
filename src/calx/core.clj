@@ -11,8 +11,7 @@
   calx.core
   (:use
     [clojure.contrib.def :only (defvar defvar-)]
-    [clojure.contrib.seq :only (indexed)]
-    [cantor])
+    [clojure.contrib.seq :only (indexed)])
   (:import
     [com.nativelibs4java.opencl
      JavaCL CLContext CLPlatform
@@ -210,7 +209,6 @@
 (defn- to-dim-array [x]
   (cond
     (number? x) (int-array [x])
-    (cartesian? x) (map #(x %) (range (count x)))
     (sequential? x) (into-array x)))
 
 (defn enqueue-kernel
