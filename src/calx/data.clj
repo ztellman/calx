@@ -10,7 +10,7 @@
   ^{:skip-wiki true}
   calx.data
   (:use
-    [clojure.contrib.def :only (defmacro- defvar- defvar)]
+  ;  [clojure.contrib.def :only (defmacro- defvar- defvar)]
     [gloss core io]
     [calx.core])
   (:import [com.nativelibs4java.opencl CLContext CLByteBuffer CLMem CLMem$Usage CLEvent]
@@ -19,7 +19,8 @@
 
 ;;;
 
-(defvar- usage-types
+;(defvar- usage-types
+(def usage-types
   {:in CLMem$Usage/Input
    :out CLMem$Usage/Output
    :in-out CLMem$Usage/InputOutput})

@@ -11,8 +11,11 @@
     :doc "An idiomatic wrapper for OpenCL."}
   calx
   (:use
-    [clojure.contrib.def :only (defmacro- defvar-)])
+  ;  [clojure.contrib.def :only (defmacro- defvar-)]
+     [potemkin]
+	 )
   (:require
+    ;[clojure.reflect]  ;added
     [calx
      [core :as core]
      [data :as data]])
@@ -20,15 +23,19 @@
     [com.nativelibs4java.opencl
      CLEvent CLQueue CLEvent$CommandType CLContext]))
 
+;;(use 'calx.core)
+;;(use 'calx.data)
+
 ;;;
 
-(defmacro- import-fn [sym]
-  (let [m (meta (eval sym))
-        m (meta (intern (:ns m) (:name m)))
-        n (:name m)
-        arglists (:arglists m)
-        doc (:doc m)]
-    (list `def (with-meta n {:doc doc :arglists (list 'quote arglists)}) (eval sym))))
+;(defmacro- import-fn [sym]
+;  (let [m (meta (eval sym))
+;        m (meta (intern (:ns m) (:name m)))
+;        n (:name m)
+;        arglists (:arglists m)
+;        doc (:doc m)]
+;    (list `def (with-meta n {:doc doc :arglists (list 'quote arglists)}) (eval sym))))
+
 
 (import-fn core/available-platforms)
 (import-fn core/available-devices)
@@ -58,15 +65,30 @@
 (import-fn data/to-buffer)
 (import-fn data/from-buffer)
 (import-fn data/wrap)
-(import-fn #'data/mimic)
-(import-fn #'data/release!)
-(import-fn #'data/acquire!)
-(import-fn #'data/enqueue-read)
-(import-fn #'data/enqueue-copy)
-(import-fn #'data/enqueue-overwrite)
-(import-fn data/create-buffer)
 
+
+;;(defprotocol-once data/Data)
+;;(deftype-once data/Buffer)
+
+
+
+(import-fn data/mimic)
+;(deftype-once data/mimic)
+(import-fn data/release!)
+;(defprotocol-once data/release!)
+(import-fn data/acquire!)
+;(defprotocol-once data/acquire!)
+(import-fn data/enqueue-read)
+;(defprotocol-once data/enqueue-read)
+(import-fn data/enqueue-copy)
+;(defprotocol-once data/enqueue-copy)
+(import-fn data/enqueue-overwrite)
+;(defprotocol-once data/enqueue-overwrite)
+(import-fn data/create-buffer)
+;(defprotocol-once data/create-buffer)
 ;;;
+
+
 
 (defmacro with-queue
   "Executes inner scope within the queue."
@@ -130,7 +152,8 @@
 
 ;;;
 
-(defvar- event-type-map
+;(defvar- event-type-map
+(def ^{:private true} event-type-map
   {CLEvent$CommandType/CopyBuffer :copy-buffer
    CLEvent$CommandType/CopyBufferToImage :copy-buffer-to-image
    CLEvent$CommandType/CopyImageToBuffer :copy-image-to-buffer

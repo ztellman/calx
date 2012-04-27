@@ -10,8 +10,9 @@
   ^{:skip-wiki true}
   calx.core
   (:use
-    [clojure.contrib.def :only (defvar defvar-)]
-    [clojure.contrib.seq :only (indexed)])
+  ;  [clojure.contrib.def :only (defvar defvar-)]
+  ;  [clojure.contrib.seq :only (indexed)]
+	[clojure.contrib.seq-utils :only [indexed]])
   (:import
     [com.nativelibs4java.opencl
      JavaCL CLContext CLPlatform
@@ -28,13 +29,22 @@
 
 ;;;
 
-(defvar *platform* nil "The current platform.")
-(defvar *context* nil "The current context.")
-(defvar *queue* nil "The current queue.")
-(defvar *program* nil "The current program")
-(defvar *workgroup-size* nil "The size of the workgroup")
-(defvar *params* nil "The params given to a kernel")
-(defvar *program-template* nil "A function which will return a program, given the current params.")
+;(defvar *platform* nil "The current platform.")
+;(defvar *context* nil "The current context.")
+;(defvar *queue* nil "The current queue.")
+;(defvar *program* nil "The current program")
+;(defvar *workgroup-size* nil "The size of the workgroup")
+;(defvar *params* nil "The params given to a kernel")
+;(defvar *program-template* nil "A function which will return a program, given the current params.")
+
+(def ^:dynamic *platform* "The current platform." nil )
+(def ^:dynamic *context* "The current context." nil )
+(def ^:dynamic *queue* "The current queue." nil )
+(def ^:dynamic *program* "The current program" nil )
+(def ^:dynamic *workgroup-size* "The size of the workgroup" nil )
+(def ^:dynamic *params* "The params given to a kernel" nil )
+(def ^:dynamic *program-template* "A function which will return a program, given the current params." nil )
+
 
 (defn platform
   "Returns the current platform, or throws an exception if it's not defined."
