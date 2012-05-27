@@ -60,6 +60,10 @@
     "Asynchronously copies a subset of the buffer into local memory. 'range' defaults to the full buffer.
 
      Returns an object that, when dereferenced, halts execution until the copy is complete, then returns a seq.")
+  (lg_enqueue-read [d queue ] [d queue  range]
+    "Asynchronously copies a subset of the buffer into local memory. 'range' defaults to the full buffer.
+     Works for the specified openCL queue
+     Returns an object that, when dereferenced, halts execution until the copy is complete, then returns a seq.")
   (enqueue-overwrite [destination [lower upper] source]
     "Asynchronously copies a buffer from local memory onto the given subset of the buffer.")
   (enqueue-copy [destination destination-offset source [lower upper]]
@@ -111,6 +115,28 @@
 	   (dosync (alter (cache) conj buffer))
 	   buffer)))))
 
+
+(defn lg_create-buffer
+  "Creates an OpenCL buffer.
+
+   'usage' may be one of [:in :out :in-out].  The default value is :in-out."
+  ([context elements frame]
+     (lg_create-buffer context elements frame :in-out))
+  ([context elements frame usage]
+     (let [codec (compile-frame frame)]
+       (if-let [match (find-match (:cache context) (sizeof codec) usage)]
+	 (assoc match
+	   :elements elements
+	   :codec codec)
+	 (let [buffer (create-buffer-
+			(.createByteBuffer (:context context) (usage-types usage) (* elements (sizeof codec)))
+			elements
+			frame
+			usage)]
+	   (dosync (alter (:cache context) conj buffer))
+	   buffer)))))
+
+
 (defrecord Buffer [^CLByteBuffer buffer, ^int capacity, ^int elements, codec, usage, ref-count]
   Data
   ;;
@@ -146,6 +172,28 @@
 	(deref [_]
 	  (wait-for event)
 	  (from-buffer buf codec)))))
+  
+  
+  (lg_enqueue-read [this queue] (lg_enqueue-read this queue  [0 elements]))
+  (lg_enqueue-read [this queue [lower upper]]
+    (let [elements (- upper lower)
+	  buf (create-byte-buffer (* elements (sizeof codec)))
+	  event (. buffer read
+		  queue
+		  (* lower (sizeof codec))
+		  (* elements (sizeof codec))
+		  buf
+		  false
+		  (make-array CLEvent 0))]
+      ^{:type ::enqueued-read}
+      (reify
+	HasEvent
+	(event [_] event)
+	(description [_] :enqueued-read)
+	clojure.lang.IDeref
+	(deref [_]
+	  (wait-for event)
+	  (from-buffer buf codec)))))
   ;;
   (enqueue-overwrite [_ [lower upper] src]
     (. buffer writeBytes
@@ -167,7 +215,7 @@
 
 (defn- create-buffer- [^CLByteBuffer buffer elements frame usage]
   (let [codec (compile-frame frame)
-	buf (Buffer. buffer (* elements (sizeof codec)) elements codec usage (ref 1))]
+	      buf   (Buffer. buffer (* elements (sizeof codec)) elements codec usage (ref 1))]
     (with-meta buf (merge (meta buf) {:cl-object buffer}))))
 
 (defn wrap
@@ -185,6 +233,25 @@
 	 (count s)
 	 codec
 	 usage))))
+
+
+(defn lg_wrap
+  ;;Note, fails to work, not sure why
+  "Copies a sequence into an OpenCL buffer.
+
+   'usage' may be one of [:in :out :in-out].  The default value is :in-out."
+  ([context s]
+     (lg_wrap context s :byte))
+  ([context s frame]
+     (lg_wrap context s frame :in-out))
+  ([context s frame usage]
+     (let [codec (compile-frame frame)]
+       (create-buffer-
+	 (.createByteBuffer (:context context) (usage-types usage) (to-buffer s codec) false)
+	 (count s)
+	 codec
+	 usage))))
+
 
 ;;;
 

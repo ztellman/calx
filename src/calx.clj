@@ -6,7 +6,7 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
-(ns 
+(ns
   ^{:author "Zachary Tellman"
     :doc "An idiomatic wrapper for OpenCL."}
   calx
@@ -65,6 +65,16 @@
 (import-fn data/to-buffer)
 (import-fn data/from-buffer)
 (import-fn data/wrap)
+
+
+(import-fn data/lg_wrap)
+(import-fn data/lg_create-buffer)
+(import-fn data/lg_enqueue-read)
+(import-fn core/lg_create-queue)
+(import-fn core/lg_finish)
+(import-fn core/lg_finish)
+(import-fn core/lg_compile-program)
+(import-fn core/lg_enqueue-kernel)
 
 
 ;;(defprotocol-once data/Data)
@@ -180,4 +190,54 @@
   (description [q]
     :queue))
 
-;;;
+;;;(lg_wrap my_context [1.0 2.0 3.3] :float32-le)
+
+
+
+(quote testing lg things from core and data
+       
+(def my_devices (available-devices (platform)))
+(def my_context (apply create-context (available-devices (platform))))
+(def my_queue   (lg_create-queue (first my_devices) my_context ))
+(lg_finish my_queue)
+
+(def my_openclprog "
+__kernel void testaddedkernel(
+    __global float *x,
+    __global float *y
+    )
+{
+    int gid = get_global_id(0);
+    y[gid] = x[gid] - 1.0;
+}
+__kernel void testaddedkernel2(
+    __global float *x,
+    __global float *y
+    )
+{
+    int gid = get_global_id(0);
+    y[gid] = x[gid] - 1.0;
+}
+")
+
+(def my_compiled_program (lg_compile-program my_devices my_openclprog my_context))
+
+;;creating buffer within a specified context
+(def my_openCL_buf1 (lg_create-buffer my_context 10000000 :float32-le))
+(def my_openCL_buf2 (lg_wrap my_context [1.0 2.0 3.3] :float32-le))
+(def my_openCL_buf3 (lg_create-buffer my_context 10000000 :float32-le))
+
+
+(lg_enqueue-kernel my_queue my_compiled_program :testaddedkernel 2 my_openCL_buf1 my_openCL_buf2)
+(time (lg_enqueue-kernel my_queue my_compiled_program :testaddedkernel 10000000 my_openCL_buf1 my_openCL_buf3))
+
+(lg_enqueue-read my_openCL_buf1 my_queue )
+(time (def foo1000000 @(lg_enqueue-read my_openCL_buf3 my_queue )))
+(time (def foo1000001 @(lg_enqueue-read my_openCL_buf3 my_queue )))
+ )
+
+
+
+
+
+

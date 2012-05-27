@@ -227,3 +227,99 @@
        (doseq [[idx arg] (indexed (map get-cl-object args))]
 	 (.setArg kernel idx arg))
        (.enqueueNDRange kernel (queue) (to-dim-array global-size) *workgroup-size* (make-array CLEvent 0)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;  this is here to show how one can use opencl without the calx core macros.
+        
+;(platform)
+;(available-devices (platform))
+;;;(context)   ;;fails...so..
+
+
+
+(defn lg_create-queue
+  "Creates a queue."
+  ([]
+     (create-queue (first (devices)) context ))
+  ([^CLDevice device context & properties]
+     (.createQueue
+       device
+       (:context context)   ;;(context)
+       (if (empty? properties)
+	 (make-array CLDevice$QueueProperties 0)
+	 (into-array properties)))))
+
+;;Here we want to pass the device and context explicitly ...could create a single clojure map for the environment so that it's easy to pass around.
+
+;(def my_devices (available-devices (platform)))
+;(def my_context (apply create-context (available-devices (platform))))
+;(def my_queue   (lg_create-queue (first my_devices) my_context ))
+
+(defn lg_finish
+  "Halt execution until all enqueued operations are complete."
+  ([]
+  (.finish ^CLQueue (queue)))
+  ([q]
+     (.finish ^CLQueue q)))
+
+;(lg_finish my_queue)
+
+(def my_openclprog "
+__kernel void testaddedkernel(
+    __global float *x,
+    __global float *y
+    )
+{
+    int gid = get_global_id(0);
+    y[gid] = x[gid] - 1.0;
+}
+__kernel void testaddedkernel2(
+    __global float *x,
+    __global float *y
+    )
+{
+    int gid = get_global_id(0);
+    y[gid] = x[gid] - 1.0;
+}
+")
+
+(defn lg_compile-program
+  "Compiles a OpenCL program, which contains 1 or more kernels."
+  ([source]
+     (compile-program (devices) source))
+  ([devices source context]
+    ; (let [program (.createProgram (context) (into-array devices) (into-array [(eval-templates source)]))
+	  ;       kernels (.createKernels ^CLProgram program)]
+      (let [program (.createProgram (:context context) (into-array devices) (into-array [(eval-templates source)]))
+	          kernels (.createKernels ^CLProgram program)]
+       (zipmap
+	 (map #(keyword (.replace (.getFunctionName ^CLKernel %) \_ \-)) kernels)
+	 kernels))))
+
+
+
+
+;;test this (lg_wrap my_context [1.0 2.0 3.3] :float32-le)
+
+(defn lg_enqueue-kernel
+  ([queue program kernel global-size & args]
+     (let [kernel ^CLKernel (program kernel)]
+       (doseq [[idx arg] (indexed (map get-cl-object args))]
+	 (.setArg kernel idx arg))
+       (.enqueueNDRange kernel queue (to-dim-array global-size) *workgroup-size* (make-array CLEvent 0)))))
+
+;; test this (lg_enqueue-kernel my_queue my_compiled_program :testaddedkernel 10 needsomebuffers)
+
+
+
+
+
+
+
+
+
+
+
+
+

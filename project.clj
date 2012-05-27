@@ -5,4 +5,6 @@
 		         [gloss "0.2.1-beta1"]
 		         [org.clojure/clojure "1.4.0"]
 		         [org.clojure/clojure-contrib "1.2.0"]
-		         ])
+		         ]
+    :dev-dependencies [
+        [lein-eclipse "1.0.0"]])
