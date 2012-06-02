@@ -70,6 +70,7 @@
 (import-fn data/lg_wrap)
 (import-fn data/lg_create-buffer)
 (import-fn data/lg_enqueue-read)
+(import-fn data/lg_enqueue-overwrite)
 (import-fn core/lg_create-queue)
 (import-fn core/lg_finish)
 (import-fn core/lg_finish)
@@ -194,6 +195,8 @@
 
 
 
+
+
 (quote testing lg things from core and data
        
 (def my_devices (available-devices (platform)))
@@ -223,17 +226,31 @@ __kernel void testaddedkernel2(
 (def my_compiled_program (lg_compile-program my_devices my_openclprog my_context))
 
 ;;creating buffer within a specified context
-(def my_openCL_buf1 (lg_create-buffer my_context 10000000 :float32-le))
-(def my_openCL_buf2 (lg_wrap my_context [1.0 2.0 3.3] :float32-le))
-(def my_openCL_buf3 (lg_create-buffer my_context 10000000 :float32-le))
+(def my_openCL_buf1  (lg_create-buffer my_context 10000 :float32-le))
+(def my_openCL_buf2  (lg_wrap my_context [1.0 2.0 3.3] :float32-le))
+(def my_openCL_buf2a (lg_wrap my_context [5.0 5.2 5.3] :float32-le))
+(def my_openCL_buf3  (lg_create-buffer my_context 10000 :float32-le))
 
 
 (lg_enqueue-kernel my_queue my_compiled_program :testaddedkernel 2 my_openCL_buf1 my_openCL_buf2)
-(time (lg_enqueue-kernel my_queue my_compiled_program :testaddedkernel 10000000 my_openCL_buf1 my_openCL_buf3))
-
-(lg_enqueue-read my_openCL_buf1 my_queue )
+(time (lg_enqueue-kernel my_queue my_compiled_program :testaddedkernel 10000 my_openCL_buf1 my_openCL_buf3))
+@(lg_enqueue-read my_openCL_buf1 my_queue )
+@(lg_enqueue-read my_openCL_buf2 my_queue )
+(def emitlargearray (time @(lg_enqueue-read my_openCL_buf3 my_queue )))
 (time (def foo1000000 @(lg_enqueue-read my_openCL_buf3 my_queue )))
 (time (def foo1000001 @(lg_enqueue-read my_openCL_buf3 my_queue )))
+
+;;YEAH it works !
+
+@(lg_enqueue-read my_openCL_buf2a my_queue )
+(lg_enqueue-overwrite my_openCL_buf2a [-2 0] (to-buffer [6.1 6.2] :float32-le)  my_queue)
+@(lg_enqueue-read my_openCL_buf2a my_queue )
+;;BOOM YEAH it works !
+
+
+;;TODO  Need to be able to copy cheepy from normal ram to GPU ram...
+;need lg_enqueue-overwrite
+
  )
 
 

@@ -66,6 +66,8 @@
      Returns an object that, when dereferenced, halts execution until the copy is complete, then returns a seq.")
   (enqueue-overwrite [destination [lower upper] source]
     "Asynchronously copies a buffer from local memory onto the given subset of the buffer.")
+  (lg_enqueue-overwrite [destination [lower upper] source queue]
+    "Asynchronously copies a buffer from local memory onto the given subset of the buffer, under the specified openCL queue")
   (enqueue-copy [destination destination-offset source [lower upper]]
     "Enqueues a copy from a subset of the source onto the destination.")
   (suitability [a size]
@@ -203,6 +205,16 @@
       src
       true
       (make-array CLEvent 0)))
+
+  (lg_enqueue-overwrite [_ [lower upper] src queue]
+    (. buffer writeBytes
+      queue
+      (* (sizeof codec) upper)
+      (* (sizeof codec) (- upper lower))
+      src
+      true
+      (make-array CLEvent 0)))
+  
   ;;
   (enqueue-copy [_ offset src [lower upper]]
     (. (:buffer src) copyTo
