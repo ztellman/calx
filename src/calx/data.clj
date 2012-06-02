@@ -58,7 +58,6 @@
     "Create a different buffer of the same type. 'elements' and 'usage' default to those of the original buffer.")
   (enqueue-read [d] [d range]
     "Asynchronously copies a subset of the buffer into local memory. 'range' defaults to the full buffer.
-
      Returns an object that, when dereferenced, halts execution until the copy is complete, then returns a seq.")
   (lg_enqueue-read [d queue ] [d queue  range]
     "Asynchronously copies a subset of the buffer into local memory. 'range' defaults to the full buffer.
@@ -119,8 +118,7 @@
 
 
 (defn lg_create-buffer
-  "Creates an OpenCL buffer.
-
+  "Creates an OpenCL buffer under a specific context.
    'usage' may be one of [:in :out :in-out].  The default value is :in-out."
   ([context elements frame]
      (lg_create-buffer context elements frame :in-out))
@@ -232,7 +230,6 @@
 
 (defn wrap
   "Copies a sequence into an OpenCL buffer.
-
    'usage' may be one of [:in :out :in-out].  The default value is :in-out."
   ([s]
      (wrap s :byte))
@@ -248,9 +245,7 @@
 
 
 (defn lg_wrap
-  ;;Note, fails to work, not sure why
-  "Copies a sequence into an OpenCL buffer.
-
+  "Copies a sequence into an OpenCL buffer under a specific context.
    'usage' may be one of [:in :out :in-out].  The default value is :in-out."
   ([context s]
      (lg_wrap context s :byte))
@@ -263,7 +258,6 @@
 	 (count s)
 	 codec
 	 usage))))
-
 
 ;;;
 

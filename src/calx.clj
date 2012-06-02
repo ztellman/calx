@@ -76,6 +76,7 @@
 (import-fn core/lg_finish)
 (import-fn core/lg_compile-program)
 (import-fn core/lg_enqueue-kernel)
+(import-fn core/lg_enqueue-barrier)
 
 
 ;;(defprotocol-once data/Data)
@@ -198,11 +199,13 @@
 
 
 (quote testing lg things from core and data
-       
+
 (def my_devices (available-devices (platform)))
 (def my_context (apply create-context (available-devices (platform))))
 (def my_queue   (lg_create-queue (first my_devices) my_context ))
 (lg_finish my_queue)
+
+;(release! my_openCL_buf1)
 
 (def my_openclprog "
 __kernel void testaddedkernel(
@@ -223,6 +226,8 @@ __kernel void testaddedkernel2(
 }
 ")
 
+
+
 (def my_compiled_program (lg_compile-program my_devices my_openclprog my_context))
 
 ;;creating buffer within a specified context
@@ -238,15 +243,38 @@ __kernel void testaddedkernel2(
 @(lg_enqueue-read my_openCL_buf2 my_queue )
 (def emitlargearray (time @(lg_enqueue-read my_openCL_buf3 my_queue )))
 (time (def foo1000000 @(lg_enqueue-read my_openCL_buf3 my_queue )))
-(time (def foo1000001 @(lg_enqueue-read my_openCL_buf3 my_queue )))
+(time (def foo1000001 @(lg_enqueue-read my_openCL_buf3 my_queue [0 2] )))
 
 ;;YEAH it works !
-
-@(lg_enqueue-read my_openCL_buf2a my_queue )
 (lg_enqueue-overwrite my_openCL_buf2a [-2 0] (to-buffer [6.1 6.2] :float32-le)  my_queue)
-@(lg_enqueue-read my_openCL_buf2a my_queue )
-;;BOOM YEAH it works !
 
+(def bufferloaded (to-buffer [6.1 6.2] :float32-le))
+@(lg_enqueue-read my_openCL_buf2a my_queue )
+(time (do (lg_enqueue-overwrite my_openCL_buf2a [-2 0] bufferloaded  my_queue)
+        (lg_enqueue-overwrite my_openCL_buf2a [-2 0] bufferloaded  my_queue)
+        (lg_enqueue-overwrite my_openCL_buf2a [-2 0] bufferloaded  my_queue)
+        (lg_enqueue-overwrite my_openCL_buf2a [-2 0] bufferloaded  my_queue)
+        (lg_enqueue-overwrite my_openCL_buf2a [-2 0] bufferloaded  my_queue)
+        (lg_enqueue-overwrite my_openCL_buf2a [-2 0] bufferloaded  my_queue)
+        (lg_enqueue-overwrite my_openCL_buf2a [-2 0] bufferloaded  my_queue)
+        (lg_enqueue-overwrite my_openCL_buf2a [-2 0] bufferloaded  my_queue)
+        (lg_enqueue-overwrite my_openCL_buf2a [-2 0] bufferloaded  my_queue)
+        (lg_enqueue-overwrite my_openCL_buf2a [-2 0] bufferloaded  my_queue)
+        (lg_enqueue-overwrite my_openCL_buf2a [-2 0] bufferloaded  my_queue)
+        (lg_enqueue-overwrite my_openCL_buf2a [-2 0] bufferloaded  my_queue)
+        (lg_enqueue-overwrite my_openCL_buf2a [-2 0] bufferloaded  my_queue)
+        (lg_enqueue-overwrite my_openCL_buf2a [-2 0] bufferloaded  my_queue)
+        (lg_enqueue-overwrite my_openCL_buf2a [-2 0] bufferloaded  my_queue)
+        (lg_enqueue-overwrite my_openCL_buf2a [-2 0] bufferloaded  my_queue)
+        (lg_enqueue-overwrite my_openCL_buf2a [-2 0] bufferloaded  my_queue)
+        (lg_enqueue-overwrite my_openCL_buf2a [-2 0] bufferloaded  my_queue)
+
+          (lg_enqueue-barrier my_queue)
+          (lg_finish my_queue)
+      ))
+@(lg_enqueue-read my_openCL_buf2a my_queue)
+;;BOOM YEAH it works !
+(lg_enqueue-barrier my_queue)
 
 ;;TODO  Need to be able to copy cheepy from normal ram to GPU ram...
 ;need lg_enqueue-overwrite
