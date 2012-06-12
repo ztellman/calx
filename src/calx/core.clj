@@ -10,8 +10,9 @@
   ^{:skip-wiki true}
   calx.core
   (:use
-    [clojure.contrib.def :only (defvar defvar-)]
-    [clojure.contrib.seq :only (indexed)])
+  ;  [clojure.contrib.def :only (defvar defvar-)]
+  ;  [clojure.contrib.seq :only (indexed)]
+	[clojure.contrib.seq-utils :only [indexed]])
   (:import
     [com.nativelibs4java.opencl
      JavaCL CLContext CLPlatform
@@ -28,13 +29,22 @@
 
 ;;;
 
-(defvar *platform* nil "The current platform.")
-(defvar *context* nil "The current context.")
-(defvar *queue* nil "The current queue.")
-(defvar *program* nil "The current program")
-(defvar *workgroup-size* nil "The size of the workgroup")
-(defvar *params* nil "The params given to a kernel")
-(defvar *program-template* nil "A function which will return a program, given the current params.")
+;(defvar *platform* nil "The current platform.")
+;(defvar *context* nil "The current context.")
+;(defvar *queue* nil "The current queue.")
+;(defvar *program* nil "The current program")
+;(defvar *workgroup-size* nil "The size of the workgroup")
+;(defvar *params* nil "The params given to a kernel")
+;(defvar *program-template* nil "A function which will return a program, given the current params.")
+
+(def ^:dynamic *platform* "The current platform." nil )
+(def ^:dynamic *context* "The current context." nil )
+(def ^:dynamic *queue* "The current queue." nil )
+(def ^:dynamic *program* "The current program" nil )
+(def ^:dynamic *workgroup-size* "The size of the workgroup" nil )
+(def ^:dynamic *params* "The params given to a kernel" nil )
+(def ^:dynamic *program-template* "A function which will return a program, given the current params." nil )
+
 
 (defn platform
   "Returns the current platform, or throws an exception if it's not defined."
@@ -146,15 +156,27 @@
   []
   (.enqueueBarrier ^CLQueue (queue)))
 
+
+
 (defn enqueue-marker
   "Returns an event which represents the progress of all previously enqueued commands."
   [q]
   (.enqueueMarker ^CLQueue (queue)))
 
+(defn lg_enqueue-marker
+  "Returns an event which represents the progress of all previously enqueued commands."
+  [q]
+  (.enqueueMarker ^CLQueue q))
+
 (defn enqueue-wait-for
   "Enqueues a barrier which will halt execution until all events given as parameters have completed."
   [& events]
   (.enqueueWaitForEvents ^CLQueue (queue) (into-array (map event events))))
+
+(defn lg_enqueue-wait-for
+  "Enqueues a barrier which will halt execution until all events given as parameters have completed."
+  [queue & events]
+  (.enqueueWaitForEvents ^CLQueue queue (into-array (map event events))))
 
 ;;;
 
@@ -217,3 +239,52 @@
        (doseq [[idx arg] (indexed (map get-cl-object args))]
 	 (.setArg kernel idx arg))
        (.enqueueNDRange kernel (queue) (to-dim-array global-size) *workgroup-size* (make-array CLEvent 0)))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; This section is an alternative implementation designed to accept as parameter
+; the openCL environment under which execution is to occour.
+
+(defn lg_enqueue-barrier
+  "Ensures that all previously enqueued commands will complete before new commands 
+   will begin, on a specific queue"
+  [queue]
+  (.enqueueBarrier ^CLQueue queue))
+
+(defn lg_create-queue
+  "Creates a queue, against a specific device and context"
+  ([]
+     (create-queue (first (devices)) context ))
+  ([^CLDevice device context & properties]
+     (.createQueue
+       device
+       (:context context)   ;;(context)
+       (if (empty? properties)
+	 (make-array CLDevice$QueueProperties 0)
+	 (into-array properties)))))
+
+
+(defn lg_finish
+  "Halt execution until all enqueued operations are complete on a specific queue"
+  ([q]
+     (.finish ^CLQueue q)))
+
+(defn lg_compile-program
+  "Compiles a OpenCL program, which contains 1 or more kernels, compiles under
+   a specific context"
+  [devices source context]
+      (let [program (.createProgram (:context context) (into-array devices) (into-array [(eval-templates source)]))
+	          kernels (.createKernels ^CLProgram program)]
+       (zipmap
+	 (map #(keyword (.replace (.getFunctionName ^CLKernel %) \_ \-)) kernels)
+	 kernels)))
+
+(defn lg_enqueue-kernel
+   "enqueue a kernel on a specific queue and from a specific compiled program"
+  ([queue program kernel global-size & args]
+     (let [kernel ^CLKernel (program kernel)]
+       (doseq [[idx arg] (indexed (map get-cl-object args))]
+	 (.setArg kernel idx arg))
+       (.enqueueNDRange kernel queue (to-dim-array global-size) *workgroup-size* (make-array CLEvent 0)))))
+

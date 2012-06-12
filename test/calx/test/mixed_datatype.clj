@@ -29,7 +29,7 @@
     b[gid] = m;
   }")
 
-(def frame [:int16 :byte])
+(def frame [:int16-le :byte])
 
 (deftest invert
   (let [value (with-cl
