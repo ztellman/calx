@@ -77,6 +77,9 @@
 (import-fn core/lg_compile-program)
 (import-fn core/lg_enqueue-kernel)
 (import-fn core/lg_enqueue-barrier)
+(import-fn core/lg_enqueue-marker)
+(import-fn core/lg_enqueue-wait-for)
+
 
 
 ;;(defprotocol-once data/Data)

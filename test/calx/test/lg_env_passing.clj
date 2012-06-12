@@ -53,6 +53,7 @@ __kernel void testaddedkernel2(
                 my_openCL_buf1 
                 my_openCL_buf2))
        com.nativelibs4java.opencl.CLEvent))
+;;Note that this is just enqueue on the queue, it has not happened yet.
 (is (= (class 
           (nth @(lg_enqueue-read my_openCL_buf2 my_queue ) 1)) 
        java.lang.Float)))

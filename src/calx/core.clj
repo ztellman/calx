@@ -163,10 +163,20 @@
   [q]
   (.enqueueMarker ^CLQueue (queue)))
 
+(defn lg_enqueue-marker
+  "Returns an event which represents the progress of all previously enqueued commands."
+  [q]
+  (.enqueueMarker ^CLQueue q))
+
 (defn enqueue-wait-for
   "Enqueues a barrier which will halt execution until all events given as parameters have completed."
   [& events]
   (.enqueueWaitForEvents ^CLQueue (queue) (into-array (map event events))))
+
+(defn lg_enqueue-wait-for
+  "Enqueues a barrier which will halt execution until all events given as parameters have completed."
+  [queue & events]
+  (.enqueueWaitForEvents ^CLQueue queue (into-array (map event events))))
 
 ;;;
 
