@@ -16,7 +16,7 @@ The OpenCL API is not known for its terseness; consider this "'Hello World' exam
 
 (with-cl
   (with-program (compile-program source)
-    (let [a (wrap [1 2 3] :float)
+    (let [a (wrap [1 2 3] :float32)
           b (mimic a)]
       (enqueue-kernel :square 3 a b)
       (enqueue-read b))))
