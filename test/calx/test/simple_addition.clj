@@ -22,9 +22,9 @@
 (deftest simple-addition
   (let [value (with-cl
 		(with-program (compile-program source)
-		  (let [a (wrap [1 2 3] :float32)
-			b (wrap [1 2 3] :float32)
+		  (let [a (wrap [1 2 3] :float32-le)
+			b (wrap [1 2 3] :float32-le)
 			c (mimic a)]
 		    (enqueue-kernel :vec-add 3 a b c)
 		    (enqueue-read c))))]
-    (is (= [2 4 6] @value))))
+    (is (= [2.0 4.0 6.0] @value))))

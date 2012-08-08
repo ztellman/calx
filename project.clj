@@ -1,7 +1,7 @@
-(defproject calx "0.2.1-SNAPSHOT"
+(defproject calx "0.2.1"
   :description "An idiomatic wrapper for OpenCL."
   :dependencies [[calx/javacl "1.0.4b"]
-		         [gloss "0.1.1-SNAPSHOT"]
-		         [org.clojure/clojure "1.2.0"]
-		         [org.clojure/clojure-contrib "1.2.0"]
-		         ])
+                 [gloss "0.2.1"]
+				 [potemkin "0.1.5"]
+                 [org.clojure/clojure "1.4.0"]
+                 ])

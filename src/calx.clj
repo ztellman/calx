@@ -11,7 +11,7 @@
     :doc "An idiomatic wrapper for OpenCL."}
   calx
   (:use
-    [clojure.contrib.def :only (defmacro- defvar-)])
+    [potemkin])
   (:require
     [calx
      [core :as core]
@@ -21,14 +21,6 @@
      CLEvent CLQueue CLEvent$CommandType CLContext]))
 
 ;;;
-
-(defmacro- import-fn [sym]
-  (let [m (meta (eval sym))
-        m (meta (intern (:ns m) (:name m)))
-        n (:name m)
-        arglists (:arglists m)
-        doc (:doc m)]
-    (list `def (with-meta n {:doc doc :arglists (list 'quote arglists)}) (eval sym))))
 
 (import-fn core/available-platforms)
 (import-fn core/available-devices)
@@ -58,12 +50,12 @@
 (import-fn data/to-buffer)
 (import-fn data/from-buffer)
 (import-fn data/wrap)
-(import-fn #'data/mimic)
-(import-fn #'data/release!)
-(import-fn #'data/acquire!)
-(import-fn #'data/enqueue-read)
-(import-fn #'data/enqueue-copy)
-(import-fn #'data/enqueue-overwrite)
+(import-fn data/mimic)
+(import-fn data/release!)
+(import-fn data/acquire!)
+(import-fn data/enqueue-read)
+(import-fn data/enqueue-copy)
+(import-fn data/enqueue-overwrite)
 (import-fn data/create-buffer)
 
 ;;;
@@ -130,7 +122,7 @@
 
 ;;;
 
-(defvar- event-type-map
+(def ^:private event-type-map
   {CLEvent$CommandType/CopyBuffer :copy-buffer
    CLEvent$CommandType/CopyBufferToImage :copy-buffer-to-image
    CLEvent$CommandType/CopyImageToBuffer :copy-image-to-buffer

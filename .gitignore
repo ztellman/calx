@@ -5,3 +5,4 @@ classes
 push
 autodoc
 *DS_Store
+.lein*

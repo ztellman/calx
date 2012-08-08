@@ -9,9 +9,6 @@
 (ns 
   ^{:skip-wiki true}
   calx.core
-  (:use
-    [clojure.contrib.def :only (defvar defvar-)]
-    [clojure.contrib.seq :only (indexed)])
   (:import
     [com.nativelibs4java.opencl
      JavaCL CLContext CLPlatform
@@ -28,13 +25,13 @@
 
 ;;;
 
-(defvar *platform* nil "The current platform.")
-(defvar *context* nil "The current context.")
-(defvar *queue* nil "The current queue.")
-(defvar *program* nil "The current program")
-(defvar *workgroup-size* nil "The size of the workgroup")
-(defvar *params* nil "The params given to a kernel")
-(defvar *program-template* nil "A function which will return a program, given the current params.")
+(def ^{:doc "The current platform."} ^:dynamic *platform* nil)
+(def ^{:doc "The current context."} ^:dynamic *context* nil)
+(def ^{:doc "The current queue."} ^:dynamic *queue* nil)
+(def ^{:doc "The current program"} ^:dynamic *program* nil)
+(def ^{:doc "The size of the workgroup"} ^:dynamic *workgroup-size* nil)
+(def ^{:doc "The params given to a kernel"} ^:dynamic *params* nil)
+(def ^{:doc "A function which will return a program, given the current params."} ^:dynamic *program-template* nil)
 
 (defn platform
   "Returns the current platform, or throws an exception if it's not defined."
@@ -214,6 +211,6 @@
 (defn enqueue-kernel
   ([kernel global-size & args]
      (let [kernel ^CLKernel ((program) kernel)]
-       (doseq [[idx arg] (indexed (map get-cl-object args))]
+       (doseq [[idx arg] (map vector (iterate inc 0) (map get-cl-object args))]
 	 (.setArg kernel idx arg))
        (.enqueueNDRange kernel (queue) (to-dim-array global-size) *workgroup-size* (make-array CLEvent 0)))))
